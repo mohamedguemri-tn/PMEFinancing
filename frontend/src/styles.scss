@@ -1,0 +1,25 @@
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+/* Global Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background-color: #fafafa;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Material Overrides */
+app-root {
+  display: block;
+}

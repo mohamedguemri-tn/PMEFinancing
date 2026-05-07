@@ -1,0 +1,405 @@
+# Comprehensive .gitignore for Multi-Project Solution
+# Covers: .NET (C#), Angular (TypeScript), Node.js, and Solidity projects
+
+# ============================================================
+# GENERAL
+# ============================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+.env
+.env.local
+.env.*.local
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================================
+# .NET / C# / ASP.NET CORE
+# ============================================================
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vsconfig
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+.nuget/
+
+# dotnet user-secrets.
+secrets.json
+
+# dotnet publish
+publish/
+PublishProfiles/
+
+# Entity Framework
+*.mdf
+*.ldf
+*.ndf
+
+# SQL Server
+*.msi
+*.msp
+*.sql
+
+# Coverage reports
+coverage/
+*.opencover.xml
+
+# Profiler results
+*.psess
+*.vsp
+*.vspx
+
+# ============================================================
+# ANGULAR / NODE.JS
+# ============================================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+npm-error.log*
+package-lock.json
+yarn.lock
+yarn-error.log*
+
+# Angular dist and out-tsc
+dist/
+out-tsc/
+.angular/
+angular-*.tgz
+
+# Temporary files
+tmp/
+temp/
+
+# Angular IDE
+.sts4-cache/
+
+# Compilation outputs
+*.js.map
+*.d.ts
+
+# Cached files
+.cache
+.eslintcache
+.stylelintcache
+
+# IDE Files
+.vscode/
+.vscode/extensions
+workspace.code-workspace
+
+# Production
+build/
+dist/
+
+# ============================================================
+# SOLIDITY / TRUFFLE / NODE.JS BLOCKCHAIN
+# ============================================================
+
+# Truffle & Ganache
+build/
+contracts/build/
+.truffle-assertions-queue
+.env
+.env.local
+.env.*.local
+
+# node_modules (already covered above)
+node_modules/
+
+# Hardhat (if using)
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# Ganache
+ganache-db.sqlite
+
+# Openzeppelin
+openzeppelin-contracts/
+
+# Contract ABIs
+abi/
+*.abi
+
+# Deployment artifacts
+deployment.json
+deployments/
+
+# Private keys and secrets
+.mnemonic
+.privatekey
+wallets.json
+
+# ============================================================
+# IDE & EDITOR
+# ============================================================
+
+# Visual Studio
+.vs/
+.vscode/
+*.code-workspace
+
+# JetBrains
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/dictionaries
+.idea/**/shelf
+*.iws
+*.iml
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.vim
+.*.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Atom
+.atom/
+
+# ============================================================
+# OPERATING SYSTEMS
+# ============================================================
+
+# Mac
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.dconf
+
+# ============================================================
+# DOCUMENTATION & ARTIFACTS
+# ============================================================
+
+# Generated documentation
+docs/_build/
+docs/.doctrees/
+
+# API documentation
+apidocs/
+
+# Build logs
+build.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================================
+# DATABASE & LOCAL DATA
+# ============================================================
+
+# SQL Server
+*.ldf
+*.mdf
+*.ndf
+LocalDB.mdf
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Local development database
+*.db-journal
+
+# Seeds and migrations
+Migrations/
+migrations/
+
+# ============================================================
+# CERTIFICATES & KEYS
+# ============================================================
+
+# SSL Certificates
+*.pem
+*.crt
+*.cert
+*.key
+*.pfx
+*.p12
+
+# Private keys
+id_rsa
+id_rsa.pub
+*.pem
+
+# ============================================================
+# PROJECT SPECIFIC
+# ============================================================
+
+# Backend specific
+backend/src/**/bin/
+backend/src/**/obj/
+backend/**/.env
+backend/**/.env.*.local
+
+# Frontend specific
+frontend/dist/
+frontend/node_modules/
+frontend/.angular/
+frontend/coverage/
+frontend/**/.env
+
+# Contracts specific
+contracts/build/
+contracts/node_modules/
+contracts/.truffle-assertions-queue
+contracts/deployments/
+contracts/**/.env
+
+# ============================================================
+# TEMPORARY & CACHE FILES
+# ============================================================
+
+# npm cache
+.npm
+.eslintcache
+
+# yarn cache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# temp directories
+temp/
+tmp/
+*.tmp
+*.bak
+*.backup
+*.old
+
+# ============================================================
+# BUILD & DEPLOYMENT
+# ============================================================
+
+# Build directories
+build/
+dist/
+out/
+publish/
+
+# CI/CD
+.github/workflows/secrets
+deployment.log
+
+# Docker (if applicable)
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes (if applicable)
+k8s/secrets/
+k8s/local/
+
+# ============================================================
+# LOCK FILES (Use wisely - may want to commit these)
+# ============================================================
+
+# Uncomment if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+# composer.lock
+
+# Only ignore lock files in specific directories
+frontend/package-lock.json
+contracts/package-lock.json
+
+# ============================================================
+# MISC IGNORED PATTERNS
+# ============================================================
+
+# Any file starting with a dot (hidden files) except our own config
+.*
+!.gitignore
+!.gitattributes
+!.github/
+!.vscode/extensions.json
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test coverage
+coverage/
+.nyc_output/
+junit.xml
+
+# Performance profiling
+perf/
+speed-measure-webpack-plugin/

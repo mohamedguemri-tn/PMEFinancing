@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <!-- ================= EF CORE ================= -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- ================= AUTH / JWT ================= -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.18.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+
+    <!-- ================= MEDIATR ================= -->
+    <PackageReference Include="MediatR" Version="12.2.0" />
+
+    <!-- ================= BLOCKCHAIN ================= -->
+    <PackageReference Include="Nethereum.Signer" Version="6.1.0" />
+    <PackageReference Include="Nethereum.Web3" Version="6.1.0" />
+
+    <!-- ================= SWAGGER ================= -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- PROJECT REFERENCES -->
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\Application\Application.csproj" />
+  </ItemGroup>
+
+</Project>

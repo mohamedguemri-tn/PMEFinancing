@@ -1,0 +1,25 @@
+{
+  "name": "sme-financing-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for blockchain-based SME financing platform",
+  "private": true,
+  "scripts": {
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "migrate:reset": "truffle migrate --reset",
+    "test": "truffle test",
+    "ganache": "ganache-cli",
+    "bsc-testnet": "truffle migrate --network bsc_testnet",
+    "ethereum-sepolia": "truffle migrate --network sepolia"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3",
+    "@truffle/hdwallet-provider": "^2.1.0",
+    "truffle": "^5.11.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "ganache-cli": "^6.12.2",
+    "truffle-contract": "^4.0.11"
+  }
+}
