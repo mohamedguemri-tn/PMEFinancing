@@ -125,15 +125,17 @@ export class PmeAssetsComponent implements OnInit {
   tokenizingAssets = new Set<string>();
 
   ngOnInit(): void {
-    this.loadAssets();
-  }
+  setTimeout(() => this.loadAssets(), 100);
+}
 
   loadAssets(): void {
-    this.http.get<Asset[]>(`${environment.apiUrl}/assets`).subscribe({
-      next: (assets) => this.assets$.next(assets),
-      error: (error) => this.snackBar.open('Failed to load assets', 'Close', { duration: 3000 }),
-    });
-  }
+  const wallet = this.walletService.currentUser?.walletAddress;
+  console.log('TOKEN AT LOAD TIME:', localStorage.getItem('auth_token'));
+  this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
+    next: (assets) => this.assets$.next(assets),
+    error: (error) => this.snackBar.open('Failed to load assets', 'Close', { duration: 3000 }),
+  });
+}
 
   openAddDialog(): void {
     const dialogRef = this.dialog.open(AddAssetDialogComponent, {

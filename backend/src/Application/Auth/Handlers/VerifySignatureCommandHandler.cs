@@ -48,14 +48,16 @@ public class VerifySignatureCommandHandler : IRequestHandler<VerifySignatureComm
     {
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new Claim("wallet", user.WalletAddress),
-        new Claim(ClaimTypes.Role, user.Role.ToString())
+        new Claim(ClaimTypes.Role, user.Role.ToString().ToUpper())
     };
 
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]!));
+    var jwtSecret = _configuration["Jwt:Secret"]
+    ?? throw new Exception("JWT secret missing");
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
     var token = new JwtSecurityToken(
-        issuer: "SMEFinancing",
-        audience: "SMEFinancing",
+        issuer: _configuration["Jwt:Issuer"],
+        audience: _configuration["Jwt:Audience"],
         claims: claims,
         expires: DateTime.Now.AddHours(24),
         signingCredentials: creds);

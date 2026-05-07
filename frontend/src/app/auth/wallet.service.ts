@@ -105,6 +105,7 @@ export class WalletService {
 
   private storeToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
+      console.log('Verify saved:', localStorage.getItem(this.tokenKey));
   }
 
   private loadStoredUser(): CurrentUser | null {
