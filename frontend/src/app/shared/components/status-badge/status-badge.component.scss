@@ -1,75 +1,87 @@
+/* ── Status badge pill ─────────────────────────────────── */
 .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  font-size: var(--font-size-xs);
+  padding: 3px 9px;
+  font-size: 11px;
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
+  white-space: nowrap;
+  line-height: 1.5;
 }
 
+/* Dot indicator */
 .dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  display: inline-block;
   flex-shrink: 0;
 }
 
-/* ── Status colors ─────────────────────────────────────── */
-.status-pending {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-  .dot { background-color: var(--color-warning); }
-}
+/* ── Status variants (spec-exact colors) ─────────────── */
 
-.status-approved {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-  .dot { background-color: var(--color-success); }
-}
-
-.status-rejected {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-  .dot { background-color: var(--color-danger); }
+.status-registered {
+  background: var(--s-registered-bg);
+  color: var(--s-registered-fg);
+  .dot { background: var(--s-registered-fg); }
 }
 
 .status-ato {
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary-dark);
+  background: var(--s-ato-bg);
+  color: var(--s-ato-fg);
 }
 
 .status-collateral {
-  background-color: var(--color-governor-bg);
-  color: var(--color-governor);
+  background: var(--s-collateral-bg);
+  color: var(--s-collateral-fg);
 }
 
-.status-registered {
-  background-color: var(--color-surface);
-  color: var(--color-text-muted);
-  border: 0.5px solid var(--color-border-strong);
+.status-liquidated {
+  background: var(--s-liquidated-bg);
+  color: var(--s-liquidated-fg);
 }
 
-.status-requested {
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary);
+.status-pending {
+  background: var(--s-pending-bg);
+  color: var(--s-pending-fg);
+  .dot { background: var(--s-pending-fg); }
 }
 
 .status-funded {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
+  background: var(--s-funded-bg);
+  color: var(--s-funded-fg);
+  .dot { background: var(--s-funded-fg); }
 }
 
 .status-repaid {
-  background-color: var(--color-surface);
-  color: var(--color-text-secondary);
-  border: 0.5px solid var(--color-border-strong);
+  background: var(--s-repaid-bg);
+  color: var(--s-repaid-fg);
+  .dot { background: var(--s-repaid-fg); }
 }
 
 .status-defaulted {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
+  background: var(--s-defaulted-bg);
+  color: var(--s-defaulted-fg);
+  .dot { background: var(--s-defaulted-fg); }
+}
+
+.status-requested {
+  background: var(--s-requested-bg);
+  color: var(--s-requested-fg);
+  .dot { background: var(--s-requested-fg); }
+}
+
+.status-approved {
+  background: var(--s-approved-bg);
+  color: var(--s-approved-fg);
+  .dot { background: var(--s-approved-fg); }
+}
+
+.status-rejected {
+  background: var(--s-rejected-bg);
+  color: var(--s-rejected-fg);
+  .dot { background: var(--s-rejected-fg); }
 }

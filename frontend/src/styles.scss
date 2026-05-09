@@ -1,17 +1,17 @@
 @use '@angular/material' as mat;
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
-@import 'tokens';
+@import 'app/core/styles/tokens';
 
 @include mat.core();
 
 $primary-palette: (
-  50:  #E6F1FB, 100: #C0D9F5, 200: #96BEF0, 300: #6CA3EA,
+  50: #E6F1FB, 100: #C0D9F5, 200: #96BEF0, 300: #6CA3EA,
   400: #4D8FE6, 500: #185FA5, 600: #1557A0, 700: #114D98,
   800: #0E438F, 900: #0C447C,
   contrast: (
-    50:  #2C2C2A, 100: #2C2C2A, 200: #2C2C2A, 300: #2C2C2A,
-    400: #ffffff, 500: #ffffff, 600: #ffffff, 700: #ffffff,
-    800: #ffffff, 900: #ffffff
+    50: #2C2C2A, 100: #2C2C2A, 200: #2C2C2A, 300: #2C2C2A,
+    400: #fff,   500: #fff,   600: #fff,   700: #fff,
+    800: #fff,   900: #fff
   )
 );
 
@@ -23,64 +23,75 @@ $app-theme: mat.define-light-theme((
   ),
   typography: mat.define-typography-config(
     $font-family: "'Inter', sans-serif",
-    $body-1: mat.define-typography-level(14px, 1.6, 400),
-    $body-2: mat.define-typography-level(14px, 1.6, 500),
-    $button: mat.define-typography-level(13px, 1.6, 500)
+    $body-1: mat.define-typography-level(14px, 1.5, 400),
+    $body-2: mat.define-typography-level(13px, 1.5, 500),
+    $button: mat.define-typography-level(13px, 1.5, 500)
   ),
   density: -1
 ));
 
 @include mat.all-component-themes($app-theme);
 
-/* ── Reset ─────────────────────────────────────────────── */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ══════════════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { font-size: var(--font-size-md); }
+html { font-size: 14px; }
 
 body {
   font-family: var(--font-base);
   font-size: var(--font-size-md);
   color: var(--color-text-primary);
-  background: var(--color-white);
+  background: var(--color-page-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
-/* ── Material Card ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   MATERIAL — GLOBAL OVERRIDES
+══════════════════════════════════════════════════════════ */
+
+/* ── Cards ─────────────────────────────────────────────── */
 .mat-mdc-card {
   border-radius: var(--radius-lg) !important;
   box-shadow: none !important;
-  border: 0.5px solid var(--color-border) !important;
-  background: var(--color-bg-card) !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-white) !important;
 }
 .mat-mdc-card-content { padding: var(--space-4) !important; }
 
-/* ── Material Form Fields ──────────────────────────────── */
-.mat-mdc-form-field {
-  width: 100%;
-  font-size: var(--font-size-base) !important;
-}
-/* Outline border radius */
+/* ── Form fields ───────────────────────────────────────── */
+.mat-mdc-form-field { width: 100%; font-size: var(--font-size-base) !important; }
+
 .mdc-notched-outline__leading  { border-radius: var(--radius-md) 0 0 var(--radius-md) !important; }
 .mdc-notched-outline__trailing { border-radius: 0 var(--radius-md) var(--radius-md) 0 !important; }
+
 .mdc-notched-outline__leading,
 .mdc-notched-outline__notch,
 .mdc-notched-outline__trailing {
+  border-color: var(--color-border) !important;
+}
+
+.mat-mdc-form-field:hover .mdc-notched-outline__leading,
+.mat-mdc-form-field:hover .mdc-notched-outline__notch,
+.mat-mdc-form-field:hover .mdc-notched-outline__trailing {
   border-color: var(--color-border-strong) !important;
 }
-/* Input text size */
-.mat-mdc-input-element,
-.mat-mdc-select-value-text {
+
+.mat-mdc-input-element, .mat-mdc-select-value-text {
   font-size: var(--font-size-base) !important;
   color: var(--color-text-primary) !important;
 }
-/* Label size */
-.mdc-floating-label,
-.mat-mdc-form-field-subscript-wrapper {
+.mdc-floating-label, .mat-mdc-form-field-subscript-wrapper {
   font-size: var(--font-size-base) !important;
 }
+.mat-mdc-form-field-hint, .mat-mdc-form-field-error {
+  font-size: var(--font-size-xs) !important;
+}
 
-/* ── Material Buttons ──────────────────────────────────── */
+/* ── Buttons ───────────────────────────────────────────── */
 .mat-mdc-button,
 .mat-mdc-raised-button,
 .mat-mdc-outlined-button,
@@ -90,132 +101,674 @@ body {
   font-size: var(--font-size-base) !important;
   box-shadow: none !important;
   letter-spacing: 0 !important;
+  height: 36px !important;
+  min-height: 36px !important;
 }
-.mat-mdc-icon-button { border-radius: var(--radius-md) !important; }
 
-/* ── Material Snackbar ─────────────────────────────────── */
+.mat-mdc-icon-button {
+  border-radius: var(--radius-md) !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 6px !important;
+}
+
+/* ── Snackbar ──────────────────────────────────────────── */
 .mat-mdc-snack-bar-container {
   border-radius: var(--radius-md) !important;
   font-size: var(--font-size-sm) !important;
+  box-shadow: var(--shadow-dropdown) !important;
 }
 
-/* ── Material Dialog ───────────────────────────────────── */
+/* ── Dialog ────────────────────────────────────────────── */
 .mat-mdc-dialog-container .mdc-dialog__surface {
-  border-radius: var(--radius-lg) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10) !important;
-  border: 0.5px solid var(--color-border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-dropdown) !important;
+  border: 1px solid var(--color-border) !important;
 }
-.mat-mdc-dialog-title { font-size: var(--font-size-lg) !important; font-weight: var(--font-weight-medium) !important; }
-.mat-mdc-dialog-actions { padding: var(--space-3) var(--space-4) var(--space-4) !important; gap: var(--space-2) !important; }
+.mat-mdc-dialog-title {
+  font-size: var(--font-size-lg) !important;
+  font-weight: var(--font-weight-medium) !important;
+  letter-spacing: -0.01em !important;
+  padding: var(--space-4) var(--space-4) var(--space-3) !important;
+}
+.mat-mdc-dialog-content {
+  padding: var(--space-2) var(--space-4) var(--space-4) !important;
+  font-size: var(--font-size-base) !important;
+}
+.mat-mdc-dialog-actions {
+  padding: var(--space-3) var(--space-4) var(--space-4) !important;
+  gap: var(--space-2) !important;
+  border-top: 1px solid var(--color-border);
+}
 
-/* ── Material Tabs ─────────────────────────────────────── */
-.mat-mdc-tab-header { border-bottom: 0.5px solid var(--color-border) !important; }
-.mdc-tab__text-label { font-size: var(--font-size-md) !important; letter-spacing: 0 !important; }
-.mdc-tab-indicator__content--underline { border-color: var(--color-primary) !important; }
+/* ── Tabs ──────────────────────────────────────────────── */
+.mat-mdc-tab-header { border-bottom: 1px solid var(--color-border) !important; }
+.mdc-tab__text-label { font-size: var(--font-size-base) !important; letter-spacing: 0 !important; }
+.mdc-tab-indicator__content--underline { border-color: var(--color-primary) !important; border-top-width: 2px !important; }
 
-/* ── Material Table ────────────────────────────────────── */
+/* ── Table ─────────────────────────────────────────────── */
 .mat-mdc-table { background: transparent !important; width: 100%; }
+.mat-mdc-header-row { background: var(--color-surface) !important; }
 .mat-mdc-header-cell {
   font-size: var(--font-size-xs) !important;
   font-weight: var(--font-weight-medium) !important;
-  color: var(--color-text-secondary) !important;
+  color: var(--color-text-muted) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  border-bottom: 0.5px solid var(--color-border-strong) !important;
-  padding: var(--space-3) var(--space-3) !important;
+  letter-spacing: 0.06em !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  padding: var(--space-2) var(--space-3) !important;
+  white-space: nowrap;
 }
 .mat-mdc-cell {
-  font-size: var(--font-size-md) !important;
+  font-size: var(--font-size-base) !important;
   color: var(--color-text-primary) !important;
-  border-bottom: 0.5px solid var(--color-border) !important;
-  padding: var(--space-3) var(--space-3) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  padding: 0 var(--space-3) !important;
+  height: 44px;
 }
-.mat-mdc-row:hover { background: var(--color-surface) !important; }
+.mat-mdc-row {
+  height: 44px !important;
+  transition: background var(--transition-fast);
+  .action-group, [class*="actions-cell"], [class*="action-cell"] { opacity: 0; transition: opacity var(--transition-fast); }
+  &:hover {
+    background: var(--color-surface) !important;
+    .action-group, [class*="actions-cell"], [class*="action-cell"] { opacity: 1; }
+  }
+}
+.mat-mdc-row:last-child .mat-mdc-cell { border-bottom: none !important; }
 
-/* ── Material Chips ────────────────────────────────────── */
+/* ── Chips ─────────────────────────────────────────────── */
 .mat-mdc-chip {
   border-radius: var(--radius-pill) !important;
   font-size: var(--font-size-xs) !important;
-  height: 24px !important;
+  height: 26px !important;
+  font-weight: var(--font-weight-medium) !important;
 }
 
-/* ── Material Stepper ──────────────────────────────────── */
+/* ── Stepper ───────────────────────────────────────────── */
 .mat-stepper-horizontal, .mat-stepper-vertical {
   background: transparent !important;
   box-shadow: none !important;
 }
 .mat-step-header .mat-step-label { font-size: var(--font-size-base) !important; }
 
-/* ── Material Paginator ────────────────────────────────── */
-.mat-mdc-paginator { font-size: var(--font-size-base) !important; }
+/* ── Paginator ─────────────────────────────────────────── */
+.mat-mdc-paginator {
+  font-size: var(--font-size-base) !important;
+  background: transparent !important;
+  border-top: 1px solid var(--color-border);
+}
 
-/* ── Material Progress Bar ─────────────────────────────── */
+/* ── Progress bar ──────────────────────────────────────── */
 .mat-mdc-progress-bar { border-radius: var(--radius-pill) !important; }
 
-/* ── Remove ALL elevation shadows globally ─────────────── */
+/* ── Remove all elevation shadows ──────────────────────── */
 [class*="mat-elevation-z"] { box-shadow: none !important; }
 .mdc-list-item { box-shadow: none !important; }
 
 /* ── Sidenav ───────────────────────────────────────────── */
-.mat-sidenav-container { background: var(--color-bg-card) !important; }
-.mat-drawer { box-shadow: none !important; border-right: 0.5px solid var(--color-border) !important; }
+.mat-sidenav-container { background: var(--color-page-bg) !important; }
+.mat-drawer {
+  box-shadow: none !important;
+  border-right: 1px solid var(--color-border) !important;
+}
+
+/* ── Toolbar ───────────────────────────────────────────── */
+.mat-toolbar {
+  background: var(--color-white) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-shadow: none !important;
+}
+
+/* ── Select panel ──────────────────────────────────────── */
+.mat-mdc-select-panel {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-dropdown) !important;
+  border: 1px solid var(--color-border) !important;
+}
+.mat-mdc-option { font-size: var(--font-size-base) !important; }
+
+/* ── List ──────────────────────────────────────────────── */
+.mat-mdc-list-item { border-bottom: 1px solid var(--color-border); }
+.mat-mdc-list-item:last-child { border-bottom: none; }
 
 /* ── Scrollbar ─────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: var(--radius-pill); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-strong); }
 
-/* ── Utility classes ───────────────────────────────────── */
-.text-muted    { color: var(--color-text-muted) !important; }
+/* ══════════════════════════════════════════════════════════
+   SHARED COMPONENT GLOBAL OVERRIDES
+   (for components with inline templates — use host selectors
+    to achieve higher specificity than Angular's scoping)
+══════════════════════════════════════════════════════════ */
+
+/* ── Stat card ─────────────────────────────────────────── */
+app-stat-card .stat-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 10px !important;
+  padding: var(--space-4) !important;
+  box-shadow: none !important;
+  transition: box-shadow var(--transition-base);
+  &:hover { box-shadow: var(--shadow-card) !important; }
+}
+app-stat-card .stat-card.color-primary { border-left: 3px solid var(--color-primary) !important; }
+app-stat-card .stat-card.color-success { border-left: 3px solid var(--color-investor) !important; }
+app-stat-card .stat-card.color-warning { border-left: 3px solid var(--color-warning) !important; }
+app-stat-card .stat-card.color-danger  { border-left: 3px solid var(--color-danger) !important; }
+app-stat-card .stat-card.color-governor{ border-left: 3px solid var(--color-governor) !important; }
+
+app-stat-card .stat-label {
+  font-size: var(--font-size-xs) !important;
+  font-weight: var(--font-weight-regular) !important;
+  color: var(--color-text-muted) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+app-stat-card .stat-value {
+  font-size: var(--font-size-2xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+  line-height: 1.15 !important;
+  margin-top: var(--space-1) !important;
+}
+app-stat-card .stat-subtitle {
+  font-size: var(--font-size-xs) !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* ── Empty state ───────────────────────────────────────── */
+app-empty-state .empty-state {
+  background: transparent !important;
+  border: 1.5px dashed var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--space-7) var(--space-5) !important;
+}
+app-empty-state .empty-icon {
+  color: var(--color-text-muted) !important;
+  font-size: var(--icon-xl) !important;
+  width: var(--icon-xl) !important;
+  height: var(--icon-xl) !important;
+}
+app-empty-state .empty-title {
+  font-size: var(--font-size-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-secondary) !important;
+}
+app-empty-state .empty-subtitle {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* ── Page shell (global wrapper used by many inline components) ── */
+.page-shell {
+  display: grid !important;
+  gap: var(--space-5) !important;
+  padding: var(--space-6) !important;
+}
+
+/* ── Stats grid ────────────────────────────────────────── */
+.stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: var(--space-4) !important;
+}
+
+/* ── Content cards (mat-card inside dashboards) ─────────── */
+.preview-card, .events-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--space-4) !important;
+
+  h3 {
+    font-size: var(--font-size-base) !important;
+    font-weight: var(--font-weight-medium) !important;
+    color: var(--color-text-primary) !important;
+    padding-bottom: var(--space-3) !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    margin-bottom: var(--space-3) !important;
+  }
+}
+
+/* ── Loan marketplace cards ────────────────────────────── */
+app-investor-marketplace .loan-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--space-4) !important;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base) !important;
+  &:hover {
+    box-shadow: var(--shadow-card) !important;
+    border-color: var(--color-border-strong) !important;
+  }
+}
+app-investor-marketplace .loan-title {
+  font-size: var(--font-size-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+}
+app-investor-marketplace .loan-amount {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-investor) !important;
+}
+
+/* ── Investor dashboard ────────────────────────────────── */
+app-investor .investor-dashboard {
+  padding: var(--space-6) !important;
+  display: grid !important;
+  gap: var(--space-5) !important;
+}
+app-investor mat-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+}
+app-investor .card-heading h3,
+app-investor .chart-header h3 {
+  font-size: var(--font-size-base) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  padding-bottom: var(--space-3) !important;
+  margin-bottom: var(--space-3) !important;
+}
+
+/* ── PME assets ────────────────────────────────────────── */
+app-pme-assets .assets-container {
+  padding: var(--space-6) !important;
+}
+app-pme-assets .assets-header h2 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+}
+app-pme-assets .assets-table {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+/* ── Governor dashboard ────────────────────────────────── */
+app-governor-dashboard .dashboard-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-governor-dashboard .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+app-governor-dashboard .overview-row {
+  display: grid !important;
+  grid-template-columns: 3fr 2fr !important;
+  gap: var(--space-4) !important;
+}
+@media (max-width: 960px) {
+  app-governor-dashboard .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  app-governor-dashboard .overview-row { grid-template-columns: 1fr !important; }
+}
+
+/* ── Governor registrations ────────────────────────────── */
+app-governor-registrations .page-shell,
+app-governor-registrations .page-header {
+  padding: var(--space-6) !important;
+}
+app-governor-registrations .users-table {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+/* ── Page header (used in several components) ─────────── */
+.page-header {
+  h2, h3 {
+    font-size: var(--font-size-xl) !important;
+    font-weight: var(--font-weight-medium) !important;
+    letter-spacing: -0.02em !important;
+    color: var(--color-text-primary) !important;
+  }
+  p, .subtitle {
+    font-size: var(--font-size-sm) !important;
+    color: var(--color-text-muted) !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* ── Count pill / warning pills ────────────────────────── */
+.count-pill {
+  background: var(--s-requested-bg) !important;
+  color: var(--s-requested-fg) !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: var(--font-size-xs) !important;
+  font-weight: var(--font-weight-medium) !important;
+  padding: 4px 10px !important;
+}
+
+/* ── Action group buttons ──────────────────────────────── */
+.action-group {
+  display: flex !important;
+  gap: var(--space-2) !important;
+  align-items: center !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   UTILITY CLASSES
+══════════════════════════════════════════════════════════ */
+.text-muted     { color: var(--color-text-muted) !important; }
 .text-secondary { color: var(--color-text-secondary) !important; }
-.font-medium   { font-weight: var(--font-weight-medium) !important; }
-.section-header {
+.font-medium    { font-weight: var(--font-weight-medium) !important; }
+.monospace      { font-family: monospace, monospace; }
+
+/* Content card wrapper used in templates */
+.content-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+
+  .card-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+/* Dialog summary rows */
+.summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
-  h2, h3 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+  padding: var(--space-2) 0;
+  font-size: var(--font-size-base);
+  border-bottom: 1px solid var(--color-border);
+  &:last-of-type { border-bottom: none; }
+  span:first-child { color: var(--color-text-muted); }
+  span:last-child  { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
 }
-.page-shell {
-  display: grid;
-  gap: var(--space-5);
-  padding: var(--space-5);
+
+/* ══════════════════════════════════════════════════════════
+   GLOBAL MAT-CARD FIX: clip overflow so border-radius applies
+   to child table header rows
+══════════════════════════════════════════════════════════ */
+.mat-mdc-card { overflow: hidden; }
+
+/* ══════════════════════════════════════════════════════════
+   GUARANTOR DASHBOARD
+══════════════════════════════════════════════════════════ */
+app-guarantor-dashboard .dashboard-shell {
+  padding: var(--space-6) !important;
+  display: grid !important;
+  gap: var(--space-5) !important;
 }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-4);
+app-guarantor-dashboard .stats-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
 }
-.stat-card {
-  padding: var(--space-4) !important;
-  background: var(--color-surface) !important;
+app-guarantor-dashboard .alert-banner {
+  background: var(--s-pending-bg) !important;
+  color: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: var(--font-size-sm) !important;
+}
+app-guarantor-dashboard .table-header h2 {
+  font-size: var(--font-size-lg) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-guarantor-dashboard .subtitle {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-muted) !important;
+}
+@media (max-width: 780px) {
+  app-guarantor-dashboard .stats-row { grid-template-columns: 1fr !important; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   GUARANTOR GUARANTEES
+══════════════════════════════════════════════════════════ */
+app-guarantor-guarantees .guarantees-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-guarantor-guarantees .page-header h1 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-guarantor-guarantees .drawer-container {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+/* Table inside the drawer container should be borderless — container provides the border */
+app-guarantor-guarantees .content-panel mat-card {
   border: none !important;
-  .stat-label {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-weight: var(--font-weight-medium);
-  }
-  .stat-value {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-    margin-top: var(--space-2);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   INVESTOR LOANS (legacy tab-based view)
+══════════════════════════════════════════════════════════ */
+app-investor-loans .loans-container {
+  padding: var(--space-6) !important;
+}
+app-investor-loans .loans-container h2 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-investor-loans .loans-container > p {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-muted) !important;
+}
+app-investor-loans .loan-card,
+app-investor-loans .investment-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+  transition: box-shadow var(--transition-base), border-color var(--transition-base) !important;
+  &:hover {
+    box-shadow: var(--shadow-card) !important;
+    border-color: var(--color-border-strong) !important;
   }
 }
-.empty-state {
-  display: grid;
-  gap: var(--space-4);
-  align-items: center;
-  justify-items: center;
-  padding: var(--space-7) var(--space-5);
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  color: var(--color-text-secondary);
-  .empty-icon { font-size: 40px; width: 40px; height: 40px; color: var(--color-text-muted); }
-  h3 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
-  p  { font-size: var(--font-size-base); color: var(--color-text-muted); }
+
+/* ══════════════════════════════════════════════════════════
+   INVESTOR INVESTMENTS
+══════════════════════════════════════════════════════════ */
+app-investor-investments .investments-shell {
+  padding: var(--space-6) !important;
+}
+app-investor-investments .investments-table {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PME DASHBOARD
+══════════════════════════════════════════════════════════ */
+app-pme .dashboard-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-pme .hero-title {
+  font-size: var(--font-size-lg) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-pme .hero-subtitle {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-muted) !important;
+}
+app-pme .stats-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+@media (max-width: 600px) {
+  app-pme .stats-row { grid-template-columns: 1fr !important; }
+}
+app-pme .recent-assets {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+}
+app-pme .section-header {
+  padding: var(--space-4) var(--space-4) var(--space-3) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+app-pme .section-header h3 {
+  font-size: var(--font-size-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-pme .active-loan-card {
+  background: var(--color-white) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+}
+app-pme .loan-label {
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--color-text-muted) !important;
+}
+app-pme .loan-amount {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PME FINANCING
+══════════════════════════════════════════════════════════ */
+app-pme-financing .financing-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-pme-financing .loan-request-grid {
+  padding-top: var(--space-4) !important;
+}
+app-pme-financing .loan-request-grid mat-card h3,
+app-pme-financing .summary-card h3 {
+  font-size: var(--font-size-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+  padding-bottom: var(--space-3) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  margin-bottom: var(--space-3) !important;
+}
+app-pme-financing .duration-toggle {
+  border-radius: var(--radius-md) !important;
+  overflow: hidden !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GOVERNOR AUDIT
+══════════════════════════════════════════════════════════ */
+app-governor-audit .audit-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-governor-audit .header-row h1 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-governor-audit .filter-row {
+  align-items: center !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GOVERNOR PARAMETERS
+══════════════════════════════════════════════════════════ */
+app-governor-parameters .parameters-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-governor-parameters .header-row h1 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-governor-parameters .meta-row {
+  color: var(--color-text-muted) !important;
+  font-size: var(--font-size-xs) !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   GOVERNOR ACCESS
+══════════════════════════════════════════════════════════ */
+app-governor-access .access-shell {
+  padding: var(--space-6) !important;
+  gap: var(--space-5) !important;
+}
+app-governor-access .access-header h1 {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-governor-access .avatar {
+  background: var(--color-governor-bg) !important;
+  color: var(--color-governor) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-medium) !important;
+  flex-shrink: 0 !important;
+}
+app-governor-access .name {
+  font-size: var(--font-size-base) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+}
+app-governor-access .wallet {
+  font-size: var(--font-size-xs) !important;
+  color: var(--color-text-muted) !important;
+  font-family: monospace !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   REGISTER SUCCESS PAGE
+══════════════════════════════════════════════════════════ */
+app-success .success-container {
+  background: var(--color-page-bg) !important;
+}
+app-success .success-content {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-7) var(--space-6);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 24px rgba(0,0,0,.04);
+}
+app-success .success-icon {
+  color: var(--color-investor) !important;
+  font-size: 56px !important;
+  width: 56px !important;
+  height: 56px !important;
+}
+app-success .success-title {
+  font-size: var(--font-size-xl) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+  letter-spacing: -0.02em !important;
+}
+app-success .success-subtitle {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-text-muted) !important;
+  line-height: 1.6 !important;
 }

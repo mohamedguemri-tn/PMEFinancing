@@ -10,6 +10,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { filter, map, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { WalletService } from '../../services/wallet.service';
 import { SharedModule } from '../../../shared/shared.module';
 
 interface NavItem {
@@ -43,10 +44,13 @@ export class AppShellComponent implements OnInit, OnDestroy {
   isMobile = false;
   pageTitle = '';
   navItems: NavItem[] = [];
+  ethBalance = '—';
   private subscription = new Subscription();
+  private balanceInterval?: ReturnType<typeof setInterval>;
 
   constructor(
     private authService: AuthService,
+    private walletService: WalletService,
     private router: Router,
     private route: ActivatedRoute,
     private breakpointObserver: BreakpointObserver
@@ -65,11 +69,14 @@ export class AppShellComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Get current user and set navigation
+    // Get current user, set navigation, and load balance
     this.subscription.add(
       this.currentUser$.subscribe(user => {
         if (user) {
           this.setNavigationForRole(user.role);
+          this.refreshBalance(user.walletAddress);
+          clearInterval(this.balanceInterval);
+          this.balanceInterval = setInterval(() => this.refreshBalance(user.walletAddress), 30000);
         }
       })
     );
@@ -89,6 +96,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    clearInterval(this.balanceInterval);
   }
 
   toggleSidenav(): void {
@@ -96,12 +104,12 @@ export class AppShellComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe();
   }
 
   private setNavigationForRole(role: string): void {
     const baseItems: NavItem[] = [
-      { label: 'Dashboard', icon: 'ti-layout-dashboard', route: `/${role.toLowerCase()}/dashboard` }
+      { label: 'Dashboard', icon: 'dashboard', route: `/${role.toLowerCase()}/dashboard` }
     ];
 
     let roleItems: NavItem[] = [];
@@ -109,31 +117,27 @@ export class AppShellComponent implements OnInit, OnDestroy {
     switch (role.toUpperCase()) {
       case 'PME':
         roleItems = [
-          { label: 'My assets', icon: 'ti-box', route: '/pme/assets' },
-          { label: 'Financing', icon: 'ti-cash', route: '/pme/financing' },
-          { label: 'Repayments', icon: 'ti-receipt', route: '/pme/repayments' },
-          { label: 'History', icon: 'ti-history', route: '/pme/history' }
+          { label: 'My assets', icon: 'inventory_2', route: '/pme/assets' },
+          { label: 'Financing', icon: 'payments', route: '/pme/financing' },
         ];
         break;
       case 'INVESTOR':
         roleItems = [
-          { label: 'Loan marketplace', icon: 'ti-building-bank', route: '/investor/marketplace' },
-          { label: 'My investments', icon: 'ti-chart-line', route: '/investor/investments' },
-          { label: 'Repayments', icon: 'ti-receipt', route: '/investor/repayments' }
+          { label: 'Loan marketplace', icon: 'account_balance', route: '/investor/marketplace' },
+          { label: 'My investments', icon: 'trending_up', route: '/investor/investments' },
         ];
         break;
       case 'GUARANTOR':
         roleItems = [
-          { label: 'My guarantees', icon: 'ti-shield-check', route: '/guarantor/guarantees' },
-          { label: 'Asset registry', icon: 'ti-box', route: '/guarantor/assets' }
+          { label: 'My guarantees', icon: 'verified_user', route: '/guarantor/guarantees' },
         ];
         break;
       case 'GOVERNOR':
         roleItems = [
-          { label: 'Registrations', icon: 'ti-users', route: '/governor/registrations', badge: 5 }, // Mock badge
-          { label: 'Access rights', icon: 'ti-key', route: '/governor/access' },
-          { label: 'Parameters', icon: 'ti-settings-2', route: '/governor/parameters' },
-          { label: 'Audit log', icon: 'ti-list', route: '/governor/audit' }
+          { label: 'Registrations', icon: 'group', route: '/governor/registrations', badge: 5 },
+          { label: 'Access rights', icon: 'key', route: '/governor/access' },
+          { label: 'Parameters', icon: 'tune', route: '/governor/parameters' },
+          { label: 'Audit log', icon: 'list_alt', route: '/governor/audit' }
         ];
         break;
     }
@@ -151,5 +155,11 @@ export class AppShellComponent implements OnInit, OnDestroy {
 
   truncateAddress(address: string): string {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  }
+
+  private refreshBalance(address: string): void {
+    this.walletService.getBalance(address)
+      .then(bal => this.ethBalance = bal)
+      .catch(() => {});
   }
 }

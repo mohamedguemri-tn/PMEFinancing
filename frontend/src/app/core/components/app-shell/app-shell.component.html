@@ -1,87 +1,100 @@
-<mat-sidenav-container class="sidenav-container">
-  <!-- Sidenav -->
+<mat-sidenav-container class="shell-container">
+
+  <!-- ═══ Sidebar ═══════════════════════════════════════ -->
   <mat-sidenav
     #sidenav
     [mode]="isMobile ? 'over' : 'side'"
     [opened]="!isMobile"
-    class="app-sidenav"
+    class="app-sidebar"
   >
-    <!-- Logo Section -->
-    <div class="logo-section">
-      <div class="logo">
-        <div class="logo-square">
-          <mat-icon>ti-topology-ring-3</mat-icon>
-        </div>
-        <span class="logo-text">BlockFin PME</span>
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <mat-icon>hub</mat-icon>
       </div>
+      <span class="logo-name">BlockFin PME</span>
     </div>
 
-    <!-- Navigation Section -->
-    <div class="nav-section">
-      <div class="section-label">Main</div>
-
-      <nav class="navigation">
+    <!-- Navigation -->
+    <div class="sidebar-body">
+      <p class="nav-group-label">Navigation</p>
+      <nav class="sidebar-nav">
         <a
           *ngFor="let item of navItems"
           [routerLink]="item.route"
           routerLinkActive="active"
           class="nav-item"
         >
-          <mat-icon>{{ item.icon }}</mat-icon>
-          <span>{{ item.label }}</span>
-          <span *ngIf="item.badge" class="badge">{{ item.badge }}</span>
+          <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
+          <span *ngIf="item.badge" class="nav-badge">{{ item.badge }}</span>
         </a>
       </nav>
-
-      <mat-divider></mat-divider>
-
-      <!-- Settings & Logout -->
-      <div class="nav-section-bottom">
-        <a class="nav-item">
-          <mat-icon>ti-settings</mat-icon>
-          <span>Settings</span>
-        </a>
-        <a class="nav-item logout" (click)="logout()">
-          <mat-icon>ti-logout</mat-icon>
-          <span>Logout</span>
-        </a>
-      </div>
     </div>
 
-    <!-- Wallet Card -->
-    <div class="wallet-card" *ngIf="currentUser$ | async as user">
-      <div class="wallet-label">Connected wallet</div>
-      <div class="wallet-address">{{ truncateAddress(user.walletAddress) }}</div>
-      <app-role-badge [role]="user.role"></app-role-badge>
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <div class="footer-sep"></div>
+      <a class="nav-item">
+        <mat-icon class="nav-icon">settings</mat-icon>
+        <span class="nav-label">Settings</span>
+      </a>
+      <a class="nav-item nav-item--danger" (click)="logout()">
+        <mat-icon class="nav-icon">logout</mat-icon>
+        <span class="nav-label">Sign out</span>
+      </a>
+
+      <!-- Wallet card -->
+      <div class="wallet-card" *ngIf="currentUser$ | async as user">
+        <div class="wallet-row">
+          <span class="online-dot"></span>
+          <span class="wallet-addr">{{ truncateAddress(user.walletAddress) }}</span>
+        </div>
+        <app-role-badge [role]="user.role"></app-role-badge>
+      </div>
     </div>
   </mat-sidenav>
 
-  <!-- Main Content -->
-  <mat-sidenav-content class="main-content">
-    <!-- Top Navbar -->
-    <mat-toolbar class="app-toolbar">
+  <!-- ═══ Main area ══════════════════════════════════════ -->
+  <mat-sidenav-content class="shell-content">
+
+    <!-- Navbar -->
+    <header class="app-navbar">
       <button
         mat-icon-button
         *ngIf="isMobile"
         (click)="toggleSidenav()"
-        class="hamburger"
+        class="nav-toggle"
       >
-        <mat-icon>ti-menu-2</mat-icon>
+        <mat-icon>menu</mat-icon>
       </button>
 
-      <span class="page-title">{{ pageTitle }}</span>
+      <span class="navbar-title">{{ pageTitle }}</span>
+      <span class="navbar-spacer"></span>
 
-      <span class="spacer"></span>
-
-      <div class="toolbar-right" *ngIf="currentUser$ | async as user">
-        <mat-chip class="wallet-chip">{{ truncateAddress(user.walletAddress) }}</mat-chip>
+      <div class="navbar-end" *ngIf="currentUser$ | async as user">
+        <div class="balance-pill">
+          <mat-icon class="balance-icon">toll</mat-icon>
+          <span class="balance-value">{{ ethBalance }} ETH</span>
+        </div>
+        <div class="wallet-pill">
+          <span class="wallet-pill-dot"></span>
+          <span class="wallet-pill-addr">{{ truncateAddress(user.walletAddress) }}</span>
+        </div>
         <app-role-badge [role]="user.role"></app-role-badge>
+        <button mat-icon-button class="navbar-icon-btn" title="Notifications">
+          <mat-icon>notifications</mat-icon>
+        </button>
+        <button mat-icon-button class="navbar-icon-btn" (click)="logout()" title="Sign out">
+          <mat-icon>logout</mat-icon>
+        </button>
       </div>
-    </mat-toolbar>
+    </header>
 
-    <!-- Content Area -->
-    <main class="content-area">
+    <!-- Page content -->
+    <main class="page-content">
       <router-outlet></router-outlet>
     </main>
+
   </mat-sidenav-content>
 </mat-sidenav-container>

@@ -41,7 +41,7 @@ interface MarketLoan {
           <p>Browse active loan requests from PMEs and fund those that match your strategy.</p>
         </div>
         <mat-form-field appearance="outline" class="search-field">
-          <mat-icon matPrefix>ti-search</mat-icon>
+          <mat-icon matPrefix>search</mat-icon>
           <input matInput placeholder="Search PME" [formControl]="searchControl" />
         </mat-form-field>
       </div>
@@ -55,7 +55,7 @@ interface MarketLoan {
 
       <app-empty-state
         *ngIf="filteredLoans.length === 0"
-        icon="ti-building-bank"
+        icon="account_balance"
         title="No loan requests available"
         subtitle="Check back soon — new requests are refreshed every 30 seconds."
       ></app-empty-state>

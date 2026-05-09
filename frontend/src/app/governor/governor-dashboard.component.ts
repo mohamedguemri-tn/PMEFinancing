@@ -58,7 +58,7 @@ interface AuditEvent {
 
           <app-empty-state
             *ngIf="pendingRegistrations.length === 0"
-            icon="ti-users"
+            icon="group"
             title="No pending registrations"
             subtitle="All caught up!"
           ></app-empty-state>
@@ -97,7 +97,7 @@ interface AuditEvent {
             <span class="event-wallet monospace">{{ truncateWallet(event.wallet) }}</span>
             <a [href]="buildTxLink(event.txHash)" target="_blank" rel="noopener" class="event-tx monospace">
               {{ truncateHash(event.txHash) }}
-              <span class="ti-external-link"></span>
+              <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">open_in_new</mat-icon>
             </a>
             <span class="event-time">{{ event.timestamp | date:'short' }}</span>
           </div>

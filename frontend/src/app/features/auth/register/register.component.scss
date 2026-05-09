@@ -1,7 +1,13 @@
-.register-container {
+/* ══════════════════════════════════════════════════════════
+   REGISTER PAGE
+══════════════════════════════════════════════════════════ */
+.register-page {
   min-height: 100vh;
-  background-color: var(--color-surface);
-  padding: var(--space-4);
+  background: var(--color-page-bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-7) var(--space-4) var(--space-5);
   position: relative;
 }
 
@@ -13,251 +19,368 @@
   z-index: 1000;
 }
 
-.back-link {
+.register-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 580px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 24px rgba(0,0,0,.04);
+}
+
+/* ── Custom step progress indicator ─────────────────────── */
+.step-progress {
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--space-1);
-  color: var(--color-primary);
+}
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition: all var(--transition-base);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+  }
+}
+
+.step-name {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition: color var(--transition-base);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--color-border);
+  min-width: 48px;
+  margin: 0 var(--space-2);
+  margin-bottom: 20px;
+  transition: background var(--transition-base);
+
+  &.done { background: var(--color-investor); }
+}
+
+/* Active step */
+.step-item.active {
+  .step-circle {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .step-name { color: var(--color-primary); }
+}
+
+/* Completed step */
+.step-item.completed {
+  .step-circle {
+    border-color: var(--color-investor);
+    background: var(--color-investor);
+    color: #fff;
+  }
+  .step-name { color: var(--color-investor); }
+}
+
+/* Upcoming step (before the user gets there) */
+.step-item.upcoming {
+  .step-circle {
+    border-color: var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text-muted);
+  }
+}
+
+/* Back link */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
   text-decoration: none;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  transition: background var(--transition-fast), color var(--transition-fast);
 
   &:hover {
-    text-decoration: underline;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    text-decoration: none;
   }
 
   mat-icon {
-    font-size: var(--font-size-md);
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
 }
 
+/* ── Material Stepper — hide the default header ────────── */
 .register-stepper {
-  background: transparent;
-  box-shadow: none;
+  background: transparent !important;
+  box-shadow: none !important;
 
-  .mat-step-header {
-    pointer-events: none;
+  // Hide the default Material stepper header (we have our custom one)
+  ::ng-deep .mat-stepper-header-container { display: none !important; }
+  ::ng-deep .mat-horizontal-stepper-header-container { display: none !important; }
+  ::ng-deep .mat-horizontal-content-container {
+    padding: 0 !important;
+    overflow: visible !important;
   }
-
-  .mat-stepper-horizontal {
-    gap: var(--space-5);
-  }
+  ::ng-deep .mat-step-header { display: none !important; }
+  ::ng-deep .mat-horizontal-stepper-content { overflow: visible !important; }
 }
 
+/* ── Step content ─────────────────────────────────────── */
 .step-content {
-  max-width: 600px;
-  margin: 0 auto;
+  padding-top: var(--space-2);
 }
 
-/* Step 1: Connect Wallet */
-.connect-section {
-  text-align: center;
+.step-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-1);
+}
 
-  .metamask-button {
-    width: 100%;
-    max-width: 320px;
-    height: 48px;
-    border: 0.5px solid var(--color-border);
+.step-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Step 1: Connect wallet ───────────────────────────── */
+.connect-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.metamask-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-white);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-base), background var(--transition-base);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+    .fox-icon { background: var(--color-primary); }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .button-left .fox-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--color-metamask);
     border-radius: var(--radius-md);
-    background-color: var(--color-white);
     display: flex;
     align-items: center;
-    padding: 0 var(--space-3);
-    cursor: pointer;
-    transition: border-color 0.2s;
-    margin-bottom: var(--space-4);
-
-    &:hover:not(:disabled) {
-      border-color: var(--color-primary);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .button-left {
-      .fox-icon {
-        width: 32px;
-        height: 32px;
-        background-color: var(--color-metamask);
-        border-radius: var(--radius-sm);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        mat-icon {
-          color: var(--color-white);
-          font-size: var(--font-size-md);
-        }
-      }
-    }
-
-    .button-center {
-      flex: 1;
-      text-align: left;
-      margin-left: var(--space-2);
-
-      .button-text {
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-primary);
-      }
-
-      .button-subtext {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-      }
-    }
-
-    .button-right {
-      mat-icon {
-        color: var(--color-text-secondary);
-      }
-    }
-  }
-
-  .wallet-chip {
-    font-family: monospace;
-    background-color: var(--color-success-bg);
-    color: var(--color-success);
-    border: 1px solid var(--color-success);
+    justify-content: center;
+    transition: background var(--transition-base);
 
     mat-icon {
-      color: var(--color-success);
+      color: #fff;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
   }
-}
 
-/* Step 2: Choose Role */
-.role-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  text-align: center;
-  margin-bottom: var(--space-5);
-  color: var(--color-text-primary);
-}
-
-.role-cards {
-  display: flex;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-  flex-wrap: wrap;
-
-  .role-card {
+  .button-center {
     flex: 1;
-    min-width: 200px;
-    border: 0.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3);
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
 
-    &:hover {
-      border-color: var(--color-primary);
-    }
-
-    &.selected {
-      border: 2px solid var(--color-primary);
-      background-color: var(--color-primary-bg);
-    }
-
-    .role-icon {
-      font-size: var(--space-5);
-      width: var(--space-5);
-      height: var(--space-5);
-      margin-bottom: var(--space-2);
-
-      &.pme {
-        color: var(--color-primary);
-      }
-
-      &.investor {
-        color: var(--color-success);
-      }
-
-      &.guarantor {
-        color: var(--color-warning);
-      }
-    }
-
-    h4 {
-      font-size: var(--font-size-lg);
+    .button-text {
+      font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      margin-bottom: var(--space-1);
       color: var(--color-text-primary);
     }
 
-    p {
-      font-size: var(--font-size-base);
-      color: var(--color-text-secondary);
-      margin: 0;
+    .button-subtext {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
     }
+  }
+
+  .button-right mat-icon {
+    color: var(--color-text-muted);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 }
 
+.wallet-connected {
+  margin-top: var(--space-1);
+}
+
+.wallet-chip {
+  background: var(--color-investor-bg) !important;
+  color: var(--color-investor) !important;
+  border: 1px solid rgba(29, 158, 117, .20) !important;
+  font-family: monospace;
+
+  mat-icon { color: var(--color-investor) !important; font-size: 16px !important; }
+}
+
+/* ── Step 2: Role cards ───────────────────────────────── */
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.role-card {
+  position: relative;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
+
+  &:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+
+  &.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+    box-shadow: 0 0 0 3px rgba(24, 95, 165, .12);
+
+    &.pme-card   { border-color: var(--color-primary); background: var(--color-pme-bg); }
+    &.inv-card   { border-color: var(--color-investor); background: var(--color-investor-bg); }
+    &.guar-card  { border-color: var(--color-guarantor); background: var(--color-guarantor-bg); }
+  }
+}
+
+.role-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-3);
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+  }
+
+  &.pme      { background: var(--color-pme-bg);       mat-icon { color: var(--color-pme); } }
+  &.investor { background: var(--color-investor-bg);  mat-icon { color: var(--color-investor); } }
+  &.guarantor{ background: var(--color-guarantor-bg); mat-icon { color: var(--color-guarantor); } }
+}
+
+.role-card-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.role-card-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.role-check {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  color: var(--color-primary);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ── Buttons ──────────────────────────────────────────── */
 .next-button {
-  width: 100%;
-  max-width: 200px;
   display: block;
+  width: 100%;
+  max-width: 180px;
   margin: 0 auto;
 }
 
-/* Step 3: Your Details */
+.submit-button {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+/* ── Step 3: Form ─────────────────────────────────────── */
 .details-form {
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-3);
 
-    @media (max-width: 768px) {
+    @media (max-width: 480px) {
       grid-template-columns: 1fr;
     }
   }
-
-  .form-field {
-    width: 100%;
-
-    ::ng-deep .mat-mdc-form-field-outline {
-      border-radius: var(--radius-md);
-    }
-
-    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-      font-size: var(--font-size-sm);
-    }
-
-    ::ng-deep .mat-mdc-form-field-label {
-      font-size: var(--font-size-sm);
-    }
-
-    ::ng-deep .mat-mdc-input-element {
-      font-size: var(--font-size-sm);
-    }
-  }
-
-  app-tx-feedback {
-    margin-bottom: var(--space-4);
-  }
-
-  .submit-button {
-    width: 100%;
-    margin-top: var(--space-3);
-  }
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .register-container {
-    padding: var(--space-3);
-  }
+app-tx-feedback { margin-bottom: var(--space-3); display: block; }
 
-  .role-cards {
-    flex-direction: column;
-
-    .role-card {
-      min-width: unset;
-    }
-  }
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  .register-page { padding: var(--space-4) var(--space-3); }
+  .register-card { padding: var(--space-4); border-radius: var(--radius-lg); }
+  .role-cards { grid-template-columns: 1fr; }
+  .step-line { min-width: 28px; }
 }

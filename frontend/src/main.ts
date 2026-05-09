@@ -7,7 +7,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { importProvidersFrom } from '@angular/core';
 
 import { AppComponent } from './app/app.component';
-import { authGuard, roleGuard } from './app/core/guards/auth.guard';
+import { authGuard, guestGuard, rootGuard, roleGuard } from './app/core/guards/auth.guard';
 import { AuthInterceptor } from './app/core/interceptors/auth.interceptor';
 import { HttpErrorInterceptor } from './app/auth/http-error.interceptor';
 import { GlobalErrorHandler } from './app/core/handlers/global-error.handler';
@@ -34,14 +34,17 @@ bootstrapApplication(AppComponent, {
     provideRouter([
       {
         path: 'login',
+        canActivate: [guestGuard],
         loadComponent: () => import('./app/auth/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
+        canActivate: [guestGuard],
         loadComponent: () => import('./app/features/auth/register/register.component').then((m) => m.RegisterComponent),
       },
       {
         path: 'register/success',
+        canActivate: [guestGuard],
         loadComponent: () => import('./app/features/auth/register/success.component').then((m) => m.SuccessComponent),
       },
       {
@@ -66,12 +69,14 @@ bootstrapApplication(AppComponent, {
       },
       {
         path: '',
-        redirectTo: 'login',
         pathMatch: 'full',
+        canActivate: [rootGuard],
+        loadComponent: () => import('./app/auth/login.component').then((m) => m.LoginComponent),
       },
       {
         path: '**',
-        redirectTo: 'login',
+        canActivate: [rootGuard],
+        loadComponent: () => import('./app/auth/login.component').then((m) => m.LoginComponent),
       },
     ]),
   ],

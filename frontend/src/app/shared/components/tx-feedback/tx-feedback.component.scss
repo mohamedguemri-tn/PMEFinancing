@@ -1,53 +1,65 @@
+/* ══════════════════════════════════════════════════════════
+   TRANSACTION FEEDBACK — inline left-border strip
+══════════════════════════════════════════════════════════ */
 .tx-feedback-banner {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-left: 3px solid transparent;
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  margin-bottom: var(--space-4);
-  border: 0.5px solid transparent;
+  margin-bottom: var(--space-3);
+  line-height: 1.5;
 }
 
+/* ── State variants ──────────────────────────────────── */
+
+/* Pending / waiting → blue */
 .banner-warning {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-  border-color: var(--color-warning);
+  background: var(--color-primary-bg);
+  color: var(--color-primary-dark);
+  border-left-color: var(--color-primary);
 }
 
+/* Success → green */
 .banner-success {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-  border-color: var(--color-success);
+  background: var(--s-funded-bg);
+  color: var(--s-funded-fg);
+  border-left-color: var(--color-investor);
 }
 
+/* Error → red */
 .banner-error {
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-  border-color: var(--color-danger);
+  background: var(--s-defaulted-bg);
+  color: var(--s-defaulted-fg);
+  border-left-color: var(--color-danger);
 }
 
+/* ── Icon ─────────────────────────────────────────────── */
 mat-icon {
   font-size: var(--icon-md);
   width: var(--icon-md);
   height: var(--icon-md);
   flex-shrink: 0;
+  line-height: 1;
 }
 
-.banner-message {
-  flex: 1;
-}
+/* ── Message / hash ────────────────────────────────────── */
+.banner-message { flex: 1; }
 
 .banner-hash {
-  font-family: monospace;
+  font-family: 'Courier New', monospace;
   font-size: var(--font-size-xs);
-  opacity: 0.8;
+  opacity: 0.75;
   flex-shrink: 0;
 }
 
+/* ── Spinner animation ────────────────────────────────── */
 .spin {
-  animation: spin 1s linear infinite;
+  animation: spin 0.9s linear infinite;
+  transform-origin: center;
 }
 
 @keyframes spin {

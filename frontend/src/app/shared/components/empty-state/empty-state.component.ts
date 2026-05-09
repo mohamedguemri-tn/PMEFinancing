@@ -1,14 +1,15 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [CommonModule, MatButtonModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule],
   template: `
     <div class="empty-state">
-      <span class="empty-icon" [class]="icon"></span>
+      <mat-icon class="empty-icon">{{ icon }}</mat-icon>
       <div class="empty-title">{{ title }}</div>
       <div class="empty-subtitle">{{ subtitle }}</div>
       <button

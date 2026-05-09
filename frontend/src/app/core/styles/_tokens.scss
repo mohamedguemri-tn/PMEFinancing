@@ -1,39 +1,67 @@
 :root {
-  /* ── Colors ────────────────────────────────────────── */
+  /* ── Brand / Primary ─────────────────────────────────── */
   --color-primary:       #185FA5;
   --color-primary-bg:    #E6F1FB;
   --color-primary-dark:  #0C447C;
 
-  --color-success:       #639922;
-  --color-success-bg:    #EAF3DE;
+  /* ── Role accent colors ──────────────────────────────── */
+  /* PME = primary blue */
+  --color-pme:           #185FA5;
+  --color-pme-bg:        #E6F1FB;
 
+  /* Investor = green */
+  --color-investor:      #1D9E75;
+  --color-investor-bg:   #E1F5EE;
+
+  /* Guarantor = amber */
+  --color-guarantor:     #BA7517;
+  --color-guarantor-bg:  #FAEEDA;
+
+  /* Governor = coral */
+  --color-governor:      #993C1D;
+  --color-governor-bg:   #FAECE7;
+
+  /* ── Semantic aliases ────────────────────────────────── */
+  --color-success:       #1D9E75;
+  --color-success-bg:    #E1F5EE;
   --color-warning:       #BA7517;
   --color-warning-bg:    #FAEEDA;
-
   --color-danger:        #A32D2D;
   --color-danger-bg:     #FCEBEB;
 
-  --color-governor:      #534AB7;
-  --color-governor-bg:   #EEEDFE;
+  /* ── Surfaces ────────────────────────────────────────── */
+  --color-white:         #FFFFFF;
+  --color-bg-card:       #FFFFFF;
+  --color-page-bg:       #F8F9FB;
+  --color-surface:       #F8F9FB;   /* row-hover / subtle fill */
+  --color-surface-warm:  #F1EFE8;   /* warm tint surfaces */
 
-  /* Surfaces */
-  --color-bg-card:  #FFFFFF; /* alias kept for backward-compat */
-  --color-white:    #FFFFFF;
-  --color-surface:  #F1EFE8;
-
-  /* Text */
-  --color-text-primary:    #2C2C2A;
+  /* ── Text ────────────────────────────────────────────── */
+  --color-text-primary:    #1A1A18;
   --color-text-secondary:  #5F5E5A;
-  --color-text-muted:      #888780;
+  --color-text-muted:      #9B9A95;
 
-  /* Borders */
-  --color-border:        rgba(44, 44, 42, 0.12);
-  --color-border-strong: rgba(44, 44, 42, 0.28);
+  /* ── Borders ─────────────────────────────────────────── */
+  --color-border:        #E5E7EB;
+  --color-border-strong: rgba(44, 44, 42, 0.20);
 
-  /* Brand / external */
-  --color-metamask: #F6851B;
+  /* ── Status pill colors (exact spec) ────────────────── */
+  --s-registered-bg: #EAF3DE; --s-registered-fg: #27500A;
+  --s-ato-bg:        #E6F1FB; --s-ato-fg:        #0C447C;
+  --s-collateral-bg: #FAEEDA; --s-collateral-fg: #633806;
+  --s-liquidated-bg: #FCEBEB; --s-liquidated-fg: #791F1F;
+  --s-pending-bg:    #F1EFE8; --s-pending-fg:    #5F5E5A;
+  --s-funded-bg:     #E1F5EE; --s-funded-fg:     #085041;
+  --s-repaid-bg:     #EAF3DE; --s-repaid-fg:     #27500A;
+  --s-defaulted-bg:  #FCEBEB; --s-defaulted-fg:  #791F1F;
+  --s-requested-bg:  #FBEAF0; --s-requested-fg:  #72243E;
+  --s-approved-bg:   #E1F5EE; --s-approved-fg:   #085041;
+  --s-rejected-bg:   #FCEBEB; --s-rejected-fg:   #791F1F;
 
-  /* ── Spacing (4 px base unit) ───────────────────────── */
+  /* ── Brand / External ────────────────────────────────── */
+  --color-metamask:  #F6851B;
+
+  /* ── Spacing (4 px base) ─────────────────────────────── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -42,33 +70,39 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* ── Typography ─────────────────────────────────────── */
-  --font-base:            'Inter', sans-serif;
-  --font-weight-regular:  400;
-  --font-weight-medium:   500;
+  /* ── Typography ──────────────────────────────────────── */
+  --font-base:           'Inter', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
 
   --font-size-xs:   11px;
   --font-size-sm:   12px;
-  --font-size-base: 13px;   /* form fields, dense UI */
-  --font-size-md:   14px;   /* body default */
+  --font-size-base: 13px;
+  --font-size-md:   14px;
   --font-size-lg:   16px;
-  --font-size-xl:   18px;
-  --font-size-2xl:  22px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
 
-  /* Icon sizes */
+  /* ── Icon sizes ──────────────────────────────────────── */
+  --icon-xs:  12px;
   --icon-sm:  14px;
   --icon-md:  20px;
   --icon-lg:  24px;
   --icon-xl:  48px;
   --icon-2xl: 64px;
 
-  /* ── Border Radius ──────────────────────────────────── */
+  /* ── Radius ──────────────────────────────────────────── */
   --radius-sm:   6px;
   --radius-md:   8px;
   --radius-lg:   12px;
+  --radius-xl:   16px;
   --radius-pill: 99px;
 
-  /* ── Transitions ────────────────────────────────────── */
-  --transition-fast: 150ms ease-out;
-  --transition-base: 200ms ease-out;
+  /* ── Shadow ──────────────────────────────────────────── */
+  --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-dropdown: 0 4px 16px rgba(0,0,0,.10);
+
+  /* ── Transitions ─────────────────────────────────────── */
+  --transition-fast: 120ms ease-out;
+  --transition-base: 180ms ease-out;
 }

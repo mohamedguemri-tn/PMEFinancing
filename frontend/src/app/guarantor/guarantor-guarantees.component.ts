@@ -70,7 +70,7 @@ interface GuaranteeAsset {
           <h1>My guarantees</h1>
         </div>
         <button mat-raised-button color="primary" (click)="openAddAssetDialog()">
-          <span class="ti-plus"></span>
+          <mat-icon>add</mat-icon>
           Add asset
         </button>
       </div>
@@ -184,7 +184,7 @@ interface GuaranteeAsset {
                   <th mat-header-cell *matHeaderCellDef>Actions</th>
                   <td mat-cell *matCellDef="let item">
                     <button mat-icon-button matTooltip="View details" (click)="openDrawer(item)">
-                      <span class="ti-eye"></span>
+                      <mat-icon>visibility</mat-icon>
                     </button>
                   </td>
                 </ng-container>
@@ -198,7 +198,7 @@ interface GuaranteeAsset {
 
           <ng-template #emptyState>
             <app-empty-state
-              icon="ti-shield-check"
+              icon="verified_user"
               title="No assets provided yet"
               subtitle="Add your first asset to start guaranteeing loans."
               buttonLabel="Add your first asset"

@@ -90,7 +90,7 @@ interface AccessUser {
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let item">
               <button mat-icon-button color="warn" matTooltip="Revoke access" (click)="openRevokeDialog(item)">
-                <span class="ti-user-x"></span>
+                <mat-icon>person_remove</mat-icon>
               </button>
             </td>
           </ng-container>

@@ -91,7 +91,7 @@ interface InvestmentLoan {
                 <div><strong>Token ID</strong></div>
                 <div>{{ row.tokenId }}</div>
                 <a class="blockchain-link" href="https://etherscan.io/tx/{{ row.txHash }}" target="_blank" rel="noopener noreferrer">
-                  View on chain <mat-icon>ti-external-link</mat-icon>
+                  View on chain <mat-icon>open_in_new</mat-icon>
                 </a>
               </div>
             </mat-expansion-panel>

@@ -92,7 +92,7 @@ interface AuditEvent {
             <th mat-header-cell *matHeaderCellDef>Tx hash</th>
             <td mat-cell *matCellDef="let item">
               <a [href]="buildTxLink(item.txHash)" target="_blank" rel="noopener" class="monospace link-cell">
-                {{ truncate(item.txHash) }} <span class="ti-external-link"></span>
+                {{ truncate(item.txHash) }} <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">open_in_new</mat-icon>
               </a>
             </td>
           </ng-container>

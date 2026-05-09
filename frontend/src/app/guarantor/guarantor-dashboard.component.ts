@@ -34,7 +34,7 @@ interface GuaranteeSummary {
       </section>
 
       <section *ngIf="expiringSoonCount > 0" class="alert-banner">
-        <span class="ti-alert-triangle alert-icon"></span>
+        <mat-icon class="alert-icon">warning</mat-icon>
         <div>
           <strong>{{ expiringSoonCount }} guarantee(s) expiring soon</strong> — review them before they lapse.
         </div>
@@ -51,7 +51,7 @@ interface GuaranteeSummary {
 
         <app-empty-state
           *ngIf="recentGuarantees.length === 0"
-          icon="ti-shield-check"
+          icon="verified_user"
           title="No guarantees yet"
           subtitle="Add assets to start providing guarantees."
           buttonLabel="Add asset"

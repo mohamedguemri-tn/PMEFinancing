@@ -1,5 +1,6 @@
-<div class="register-container">
-  <!-- Progress Bar -->
+<div class="register-page">
+
+  <!-- Loading bar -->
   <mat-progress-bar
     mode="indeterminate"
     color="primary"
@@ -7,228 +8,259 @@
     class="progress-bar">
   </mat-progress-bar>
 
-  <!-- Back Link -->
-  <a routerLink="/login" class="back-link">
-    <mat-icon>arrow_back</mat-icon>
-    Back to login
-  </a>
+  <!-- Centered card -->
+  <div class="register-card">
 
-  <!-- Stepper -->
-  <mat-stepper [linear]="isLinear" orientation="horizontal" class="register-stepper">
-    <!-- Step 1: Connect Wallet -->
-    <mat-step [completed]="!!walletAddress">
-      <ng-template matStepLabel>Connect Wallet</ng-template>
+    <!-- Custom step progress indicator (visual only) -->
+    <div class="step-progress">
+      <div class="step-item" [class.completed]="!!walletAddress" [class.active]="!walletAddress">
+        <div class="step-circle">
+          <mat-icon *ngIf="!!walletAddress">check</mat-icon>
+          <span *ngIf="!walletAddress">1</span>
+        </div>
+        <span class="step-name">Connect</span>
+      </div>
+      <div class="step-line" [class.done]="!!walletAddress"></div>
+      <div class="step-item"
+           [class.completed]="!!selectedRole"
+           [class.active]="!!walletAddress && !selectedRole"
+           [class.upcoming]="!walletAddress">
+        <div class="step-circle">
+          <mat-icon *ngIf="!!selectedRole">check</mat-icon>
+          <span *ngIf="!selectedRole">2</span>
+        </div>
+        <span class="step-name">Role</span>
+      </div>
+      <div class="step-line" [class.done]="!!selectedRole"></div>
+      <div class="step-item"
+           [class.active]="!!walletAddress && !!selectedRole"
+           [class.upcoming]="!selectedRole">
+        <div class="step-circle">
+          <span>3</span>
+        </div>
+        <span class="step-name">Details</span>
+      </div>
+    </div>
 
-      <div class="step-content">
-        <div class="connect-section">
-          <button
-            class="metamask-button"
-            (click)="connectWallet()"
-            [disabled]="isAsyncOperation"
-          >
-            <div class="button-left">
-              <div class="fox-icon">
+    <!-- Back link -->
+    <a routerLink="/login" class="back-link">
+      <mat-icon>arrow_back</mat-icon>
+      Back to login
+    </a>
+
+    <!-- Material stepper (Angular logic preserved, visual header hidden via CSS) -->
+    <mat-stepper [linear]="isLinear" orientation="horizontal" class="register-stepper">
+
+      <!-- ── Step 1: Connect Wallet ── -->
+      <mat-step [completed]="!!walletAddress">
+        <ng-template matStepLabel>Connect Wallet</ng-template>
+
+        <div class="step-content">
+          <h2 class="step-title">Connect your wallet</h2>
+          <p class="step-desc">Link your MetaMask wallet to get started on BlockFin PME.</p>
+
+          <div class="connect-section">
+            <button
+              class="metamask-button"
+              (click)="connectWallet()"
+              [disabled]="isAsyncOperation"
+            >
+              <div class="button-left">
+                <div class="fox-icon">
+                  <mat-icon>account_balance_wallet</mat-icon>
+                </div>
+              </div>
+              <div class="button-center">
+                <div class="button-text">Connect with MetaMask</div>
+                <div class="button-subtext">Sign a message to verify ownership</div>
+              </div>
+              <div class="button-right">
+                <mat-icon *ngIf="!isAsyncOperation">chevron_right</mat-icon>
+                <mat-progress-spinner *ngIf="isAsyncOperation" diameter="18" mode="indeterminate"></mat-progress-spinner>
+              </div>
+            </button>
+
+            <div class="wallet-connected" *ngIf="walletAddress">
+              <mat-chip class="wallet-chip">
                 <mat-icon>account_balance_wallet</mat-icon>
+                {{ truncatedAddress }}
+                <app-status-badge status="APPROVED"></app-status-badge>
+              </mat-chip>
+            </div>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- ── Step 2: Choose Role ── -->
+      <mat-step [completed]="!!selectedRole">
+        <ng-template matStepLabel>Choose Role</ng-template>
+
+        <div class="step-content">
+          <h2 class="step-title">I want to…</h2>
+          <p class="step-desc">Choose how you'll participate on the platform.</p>
+
+          <div class="role-cards">
+            <div
+              class="role-card"
+              [class.selected]="selectedRole === 'PME'"
+              (click)="selectRole('PME')"
+            >
+              <div class="role-card-icon pme">
+                <mat-icon>store</mat-icon>
+              </div>
+              <h4 class="role-card-title">PME</h4>
+              <p class="role-card-desc">Small business seeking financing</p>
+              <div class="role-check" *ngIf="selectedRole === 'PME'">
+                <mat-icon>check_circle</mat-icon>
               </div>
             </div>
-            <div class="button-center">
-              <div class="button-text">Connect with MetaMask</div>
-              <div class="button-subtext">Sign a message to verify ownership</div>
+
+            <div
+              class="role-card"
+              [class.selected]="selectedRole === 'Investor'"
+              (click)="selectRole('Investor')"
+            >
+              <div class="role-card-icon investor">
+                <mat-icon>show_chart</mat-icon>
+              </div>
+              <h4 class="role-card-title">Investor</h4>
+              <p class="role-card-desc">Fund businesses on the platform</p>
+              <div class="role-check" *ngIf="selectedRole === 'Investor'">
+                <mat-icon>check_circle</mat-icon>
+              </div>
             </div>
-            <div class="button-right">
-              <mat-icon *ngIf="!isAsyncOperation">chevron_right</mat-icon>
-              <mat-progress-spinner *ngIf="isAsyncOperation" diameter="20" mode="indeterminate"></mat-progress-spinner>
+
+            <div
+              class="role-card"
+              [class.selected]="selectedRole === 'Guarantor'"
+              (click)="selectRole('Guarantor')"
+            >
+              <div class="role-card-icon guarantor">
+                <mat-icon>verified_user</mat-icon>
+              </div>
+              <h4 class="role-card-title">Guarantor</h4>
+              <p class="role-card-desc">Provide asset-backed guarantees</p>
+              <div class="role-check" *ngIf="selectedRole === 'Guarantor'">
+                <mat-icon>check_circle</mat-icon>
+              </div>
             </div>
-          </button>
-
-          <mat-chip *ngIf="walletAddress" class="wallet-chip">
-            <mat-icon>account_balance_wallet</mat-icon>
-            {{ truncatedAddress }}
-            <app-status-badge status="APPROVED"></app-status-badge>
-          </mat-chip>
-        </div>
-      </div>
-    </mat-step>
-
-    <!-- Step 2: Choose Role -->
-    <mat-step [completed]="!!selectedRole">
-      <ng-template matStepLabel>Choose Role</ng-template>
-
-      <div class="step-content">
-        <h3 class="role-title">I am a...</h3>
-
-        <div class="role-cards">
-          <div
-            class="role-card"
-            [class.selected]="selectedRole === 'PME'"
-            (click)="selectRole('PME')"
-          >
-            <mat-icon class="role-icon pme">store</mat-icon>
-            <h4>PME</h4>
-            <p>Small business seeking financing</p>
           </div>
-
-          <div
-            class="role-card"
-            [class.selected]="selectedRole === 'Investor'"
-            (click)="selectRole('Investor')"
-          >
-            <mat-icon class="role-icon investor">show_chart</mat-icon>
-            <h4>Investor</h4>
-            <p>Fund businesses on the platform</p>
-          </div>
-
-          <div
-            class="role-card"
-            [class.selected]="selectedRole === 'Guarantor'"
-            (click)="selectRole('Guarantor')"
-          >
-            <mat-icon class="role-icon guarantor">verified_user</mat-icon>
-            <h4>Guarantor</h4>
-            <p>Provide physical asset guarantees</p>
-          </div>
-        </div>
-
-        <button
-          mat-flat-button
-          color="primary"
-          matStepperNext
-          [disabled]="!selectedRole"
-          class="next-button"
-        >
-          Next
-        </button>
-      </div>
-    </mat-step>
-
-    <!-- Step 3: Your Details -->
-    <mat-step>
-      <ng-template matStepLabel>Your Details</ng-template>
-
-      <div class="step-content">
-        <form [formGroup]="registrationForm" class="details-form">
-          <!-- PME Fields -->
-          <div *ngIf="selectedRole === 'PME'" class="form-grid">
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Company Name</mat-label>
-              <input matInput formControlName="companyName" placeholder="Enter company name">
-              <mat-error *ngIf="registrationForm.get('companyName')?.hasError('required')">
-                Company name is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('companyName')?.hasError('minlength')">
-                Company name must be at least 2 characters
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" placeholder="Enter email">
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
-                Email is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Sector</mat-label>
-              <mat-select formControlName="sector">
-                <mat-option *ngFor="let sector of sectors" [value]="sector">{{ sector }}</mat-option>
-              </mat-select>
-              <mat-error *ngIf="registrationForm.get('sector')?.hasError('required')">
-                Sector is required
-              </mat-error>
-            </mat-form-field>
-          </div>
-
-          <!-- Investor Fields -->
-          <div *ngIf="selectedRole === 'Investor'" class="form-grid">
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Full Name</mat-label>
-              <input matInput formControlName="fullName" placeholder="Enter full name">
-              <mat-error *ngIf="registrationForm.get('fullName')?.hasError('required')">
-                Full name is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('fullName')?.hasError('minlength')">
-                Full name must be at least 2 characters
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" placeholder="Enter email">
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
-                Email is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Investor Type</mat-label>
-              <mat-select formControlName="investorType">
-                <mat-option *ngFor="let type of investorTypes" [value]="type">{{ type }}</mat-option>
-              </mat-select>
-              <mat-error *ngIf="registrationForm.get('investorType')?.hasError('required')">
-                Investor type is required
-              </mat-error>
-            </mat-form-field>
-          </div>
-
-          <!-- Guarantor Fields -->
-          <div *ngIf="selectedRole === 'Guarantor'" class="form-grid">
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Full Name</mat-label>
-              <input matInput formControlName="fullName" placeholder="Enter full name">
-              <mat-error *ngIf="registrationForm.get('fullName')?.hasError('required')">
-                Full name is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('fullName')?.hasError('minlength')">
-                Full name must be at least 2 characters
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" placeholder="Enter email">
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">
-                Email is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">
-                Please enter a valid email
-              </mat-error>
-            </mat-form-field>
-
-            <mat-form-field [ngClass]="getFormFieldClasses()">
-              <mat-label>Organization Name</mat-label>
-              <input matInput formControlName="organizationName" placeholder="Enter organization name">
-              <mat-error *ngIf="registrationForm.get('organizationName')?.hasError('required')">
-                Organization name is required
-              </mat-error>
-              <mat-error *ngIf="registrationForm.get('organizationName')?.hasError('minlength')">
-                Organization name must be at least 2 characters
-              </mat-error>
-            </mat-form-field>
-          </div>
-
-          <app-tx-feedback
-            [state]="feedbackState"
-            [message]="feedbackMessage"
-          ></app-tx-feedback>
 
           <button
             mat-flat-button
             color="primary"
-            (click)="submitRegistration()"
-            [disabled]="registrationForm.invalid || isAsyncOperation"
-            class="submit-button"
+            matStepperNext
+            [disabled]="!selectedRole"
+            class="next-button"
           >
-            Create account
+            Continue
           </button>
-        </form>
-      </div>
-    </mat-step>
-  </mat-stepper>
+        </div>
+      </mat-step>
+
+      <!-- ── Step 3: Your Details ── -->
+      <mat-step>
+        <ng-template matStepLabel>Your Details</ng-template>
+
+        <div class="step-content">
+          <h2 class="step-title">Your details</h2>
+          <p class="step-desc">Fill in your profile to complete registration.</p>
+
+          <form [formGroup]="registrationForm" class="details-form">
+
+            <!-- PME Fields -->
+            <div *ngIf="selectedRole === 'PME'" class="form-grid">
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Company Name</mat-label>
+                <input matInput formControlName="companyName" placeholder="Your company name">
+                <mat-error *ngIf="registrationForm.get('companyName')?.hasError('required')">Company name is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('companyName')?.hasError('minlength')">Minimum 2 characters</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" placeholder="contact@company.com">
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">Email is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">Enter a valid email</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Sector</mat-label>
+                <mat-select formControlName="sector">
+                  <mat-option *ngFor="let sector of sectors" [value]="sector">{{ sector }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="registrationForm.get('sector')?.hasError('required')">Sector is required</mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Investor Fields -->
+            <div *ngIf="selectedRole === 'Investor'" class="form-grid">
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Full Name</mat-label>
+                <input matInput formControlName="fullName" placeholder="Your full name">
+                <mat-error *ngIf="registrationForm.get('fullName')?.hasError('required')">Full name is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('fullName')?.hasError('minlength')">Minimum 2 characters</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" placeholder="your@email.com">
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">Email is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">Enter a valid email</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Investor Type</mat-label>
+                <mat-select formControlName="investorType">
+                  <mat-option *ngFor="let type of investorTypes" [value]="type">{{ type }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="registrationForm.get('investorType')?.hasError('required')">Type is required</mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Guarantor Fields -->
+            <div *ngIf="selectedRole === 'Guarantor'" class="form-grid">
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Full Name</mat-label>
+                <input matInput formControlName="fullName" placeholder="Your full name">
+                <mat-error *ngIf="registrationForm.get('fullName')?.hasError('required')">Full name is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('fullName')?.hasError('minlength')">Minimum 2 characters</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" type="email" placeholder="your@email.com">
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('required')">Email is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('email')?.hasError('email')">Enter a valid email</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" [ngClass]="getFormFieldClasses()">
+                <mat-label>Organization Name</mat-label>
+                <input matInput formControlName="organizationName" placeholder="Your organization">
+                <mat-error *ngIf="registrationForm.get('organizationName')?.hasError('required')">Organization name is required</mat-error>
+                <mat-error *ngIf="registrationForm.get('organizationName')?.hasError('minlength')">Minimum 2 characters</mat-error>
+              </mat-form-field>
+            </div>
+
+            <app-tx-feedback
+              [state]="feedbackState"
+              [message]="feedbackMessage"
+            ></app-tx-feedback>
+
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="submitRegistration()"
+              [disabled]="registrationForm.invalid || isAsyncOperation"
+              class="submit-button"
+            >
+              Create account
+            </button>
+
+          </form>
+        </div>
+      </mat-step>
+
+    </mat-stepper>
+  </div>
 </div>

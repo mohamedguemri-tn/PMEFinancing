@@ -76,7 +76,7 @@ interface InvestmentActivity {
           </div>
           <app-empty-state
             *ngIf="recentActivity.length === 0"
-            icon="ti-chart-line"
+            icon="trending_up"
             title="No activity yet"
             subtitle="Your funded loans will appear here."
           ></app-empty-state>

@@ -41,7 +41,7 @@ interface PendingUser {
 
       <app-empty-state
         *ngIf="pendingUsers.length === 0 && !loading"
-        icon="ti-users"
+        icon="group"
         title="No pending registrations"
         subtitle="All registrations have been reviewed."
       ></app-empty-state>

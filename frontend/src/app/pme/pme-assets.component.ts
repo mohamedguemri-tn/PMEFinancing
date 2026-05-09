@@ -59,7 +59,7 @@ export interface Asset {
 
       <app-empty-state
         *ngIf="dataSource.data.length === 0"
-        icon="ti-box"
+        icon="inventory_2"
         title="No assets yet"
         subtitle="Add your first asset to start tokenizing and financing."
         buttonLabel="Add your first asset"

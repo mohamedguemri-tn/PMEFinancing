@@ -1,28 +1,37 @@
+/* ── Role badge pill ───────────────────────────────────── */
 .role-badge {
+  display: inline-flex;
+  align-items: center;
   border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  font-size: var(--font-size-xs);
-  font-weight: 500;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
   text-transform: uppercase;
-  display: inline-block;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  line-height: 1.5;
 }
 
+/* PME → primary blue */
 .role-pme {
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary-dark);
+  background: var(--color-pme-bg);
+  color: var(--color-pme);
 }
 
+/* Investor → green */
 .role-investor {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
+  background: var(--color-investor-bg);
+  color: var(--color-investor);
 }
 
+/* Guarantor → amber */
 .role-guarantor {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
+  background: var(--color-guarantor-bg);
+  color: var(--color-guarantor);
 }
 
+/* Governor → coral */
 .role-governor {
-  background-color: var(--color-governor-bg);
+  background: var(--color-governor-bg);
   color: var(--color-governor);
 }
