@@ -24,13 +24,13 @@ import { Asset } from './pme-assets.component';
     <h2 mat-dialog-title>Edit Asset</h2>
     <mat-dialog-content>
       <form [formGroup]="assetForm">
-        <mat-form-field appearance="fill">
+        <mat-form-field appearance="outline">
           <mat-label>Name</mat-label>
           <input matInput formControlName="name" />
           <mat-error *ngIf="assetForm.get('name')?.invalid">Name is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="fill">
+        <mat-form-field appearance="outline">
           <mat-label>Asset Type</mat-label>
           <mat-select formControlName="assetType">
             <mat-option value="machinery">Machinery</mat-option>
@@ -41,7 +41,7 @@ import { Asset } from './pme-assets.component';
           <mat-error *ngIf="assetForm.get('assetType')?.invalid">Asset type is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="fill">
+        <mat-form-field appearance="outline">
           <mat-label>Estimated Value</mat-label>
           <input matInput type="number" formControlName="estimatedValue" />
           <mat-error *ngIf="assetForm.get('estimatedValue')?.invalid">Valid value is required</mat-error>

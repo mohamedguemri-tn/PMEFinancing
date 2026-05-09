@@ -1,0 +1,5 @@
+<div *ngIf="isVisible" class="tx-feedback-banner" [ngClass]="bannerClass" @slideIn>
+  <mat-icon [class.spin]="isSpinning">{{ icon }}</mat-icon>
+  <span class="banner-message">{{ displayMessage }}</span>
+  <span *ngIf="state === 'pending' && txHash" class="banner-hash">{{ truncatedHash }}</span>
+</div>

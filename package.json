@@ -1,0 +1,12 @@
+{
+  "name": "code-mohamed",
+  "version": "1.0.0",
+  "description": "Root package for scripts",
+  "scripts": {
+    "wallets": "node scripts/print-test-wallets.js"
+  },
+  "dependencies": {
+    "ethers": "^6.12.1",
+    "dotenv": "^16.4.5"
+  }
+}

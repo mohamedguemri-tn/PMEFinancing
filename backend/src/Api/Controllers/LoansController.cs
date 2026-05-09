@@ -1,8 +1,11 @@
 using Application.Loans.Commands;
 using Application.Loans.Queries;
+using Domain.Entities;
+using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -12,18 +15,40 @@ namespace Api.Controllers;
 public class LoansController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly AppDbContext _context;
 
-    public LoansController(IMediator mediator)
+    public LoansController(IMediator mediator, AppDbContext context)
     {
         _mediator = mediator;
+        _context = context;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetRequestedLoans()
     {
-        var query = new GetRequestedLoansQuery();
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(new GetRequestedLoansQuery());
         return Ok(result);
+    }
+
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActiveLoan([FromQuery] string pmeWallet)
+    {
+        var loan = await _context.Loans
+            .Include(l => l.CollateralAsset)
+            .Where(l => l.Pme.WalletAddress == pmeWallet && l.Status == LoanStatus.FUNDED)
+            .Select(l => new
+            {
+                l.Id,
+                amount = l.RequestedAmount,
+                collateralName = l.CollateralAsset.Name,
+                progress = 50,
+                nextRepayment = l.FundedAt.HasValue
+                    ? l.FundedAt.Value.AddDays(l.DurationDays).ToString("MMM d, yyyy")
+                    : "N/A"
+            })
+            .FirstOrDefaultAsync();
+
+        return Ok(loan);
     }
 
     [HttpPost]
@@ -47,5 +72,36 @@ public class LoansController : ControllerBase
         command.Id = id;
         await _mediator.Send(command);
         return NoContent();
+    }
+
+    [HttpGet("portfolio")]
+    public async Task<IActionResult> GetPortfolio()
+    {
+        var wallet = User.FindFirst("wallet")?.Value;
+        if (string.IsNullOrWhiteSpace(wallet))
+            return Unauthorized();
+
+        var investorId = await _context.Users
+            .Where(u => u.WalletAddress == wallet)
+            .Select(u => (Guid?)u.Id)
+            .FirstOrDefaultAsync();
+
+        if (investorId == null)
+            return Ok(Array.Empty<object>());
+
+        var loans = await _context.Loans
+            .Include(l => l.Pme).ThenInclude(p => p.PmeProfile)
+            .Where(l => l.InvestorId == investorId)
+            .Select(l => new
+            {
+                id = l.Id,
+                smeName = l.Pme.PmeProfile != null ? l.Pme.PmeProfile.CompanyName : l.Pme.WalletAddress,
+                amount = l.RequestedAmount,
+                date = l.FundedAt.HasValue ? l.FundedAt.Value.ToString("MMM d, yyyy") : l.CreatedAt.ToString("MMM d, yyyy"),
+                status = l.Status.ToString()
+            })
+            .ToListAsync();
+
+        return Ok(loans);
     }
 }

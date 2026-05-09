@@ -1,0 +1,87 @@
+<mat-sidenav-container class="sidenav-container">
+  <!-- Sidenav -->
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile ? 'over' : 'side'"
+    [opened]="!isMobile"
+    class="app-sidenav"
+  >
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <div class="logo">
+        <div class="logo-square">
+          <mat-icon>ti-topology-ring-3</mat-icon>
+        </div>
+        <span class="logo-text">BlockFin PME</span>
+      </div>
+    </div>
+
+    <!-- Navigation Section -->
+    <div class="nav-section">
+      <div class="section-label">Main</div>
+
+      <nav class="navigation">
+        <a
+          *ngFor="let item of navItems"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+          <span *ngIf="item.badge" class="badge">{{ item.badge }}</span>
+        </a>
+      </nav>
+
+      <mat-divider></mat-divider>
+
+      <!-- Settings & Logout -->
+      <div class="nav-section-bottom">
+        <a class="nav-item">
+          <mat-icon>ti-settings</mat-icon>
+          <span>Settings</span>
+        </a>
+        <a class="nav-item logout" (click)="logout()">
+          <mat-icon>ti-logout</mat-icon>
+          <span>Logout</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Wallet Card -->
+    <div class="wallet-card" *ngIf="currentUser$ | async as user">
+      <div class="wallet-label">Connected wallet</div>
+      <div class="wallet-address">{{ truncateAddress(user.walletAddress) }}</div>
+      <app-role-badge [role]="user.role"></app-role-badge>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="main-content">
+    <!-- Top Navbar -->
+    <mat-toolbar class="app-toolbar">
+      <button
+        mat-icon-button
+        *ngIf="isMobile"
+        (click)="toggleSidenav()"
+        class="hamburger"
+      >
+        <mat-icon>ti-menu-2</mat-icon>
+      </button>
+
+      <span class="page-title">{{ pageTitle }}</span>
+
+      <span class="spacer"></span>
+
+      <div class="toolbar-right" *ngIf="currentUser$ | async as user">
+        <mat-chip class="wallet-chip">{{ truncateAddress(user.walletAddress) }}</mat-chip>
+        <app-role-badge [role]="user.role"></app-role-badge>
+      </div>
+    </mat-toolbar>
+
+    <!-- Content Area -->
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,41 +1,25 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
+import { DebugPanelComponent } from './core/debug/debug-panel.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatToolbarModule, MatButtonModule],
+  imports: [CommonModule, RouterModule, DebugPanelComponent],
   template: `
-    <mat-toolbar color="primary" class="app-toolbar">
-      <span>SME Financing Platform</span>
-      <span class="spacer"></span>
-      <a mat-button routerLink="/login">Login</a>
-      <a mat-button routerLink="/pme">PME</a>
-      <a mat-button routerLink="/investor">Investor</a>
-      <a mat-button routerLink="/governor">Governor</a>
-    </mat-toolbar>
-
-    <main class="app-main">
-      <router-outlet></router-outlet>
-    </main>
+    <router-outlet></router-outlet>
+    <app-debug-panel *ngIf="isDev"></app-debug-panel>
   `,
   styles: [`
-    .app-toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .spacer {
-      flex: 1 1 auto;
-    }
-
-    .app-main {
-      padding: 24px;
+    :host {
+      display: block;
+      height: 100vh;
     }
   `],
 })
-export class AppComponent {}
+export class AppComponent {
+  isDev = !environment.production && environment.development;
+}
+

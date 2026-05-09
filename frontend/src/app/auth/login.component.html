@@ -1,0 +1,78 @@
+<div class="login-container">
+  <!-- Left Panel - Branding -->
+  <div class="left-panel">
+    <div class="branding">
+      <h1 class="platform-name">BlockFin PME</h1>
+      <p class="tagline">Secure blockchain financing for SMEs</p>
+      <div class="trust-indicators">
+        <div class="indicator">
+          <mat-icon>verified</mat-icon>
+          <span>Immutable transactions</span>
+        </div>
+        <div class="indicator">
+          <mat-icon>security</mat-icon>
+          <span>MetaMask secured</span>
+        </div>
+        <div class="indicator">
+          <mat-icon>group</mat-icon>
+          <span>Role-based access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel - Login -->
+  <div class="right-panel">
+    <mat-card class="login-card">
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-square">
+          <mat-icon>ti-topology-ring-3</mat-icon>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h2 class="title">Sign in</h2>
+      <p class="subtitle">Connect your Ethereum wallet to continue</p>
+
+      <!-- MetaMask Button -->
+      <button
+        class="metamask-button"
+        (click)="onConnect()"
+        [disabled]="loading"
+      >
+        <div class="button-left">
+          <div class="fox-icon">
+            <mat-icon>ti-wallet</mat-icon>
+          </div>
+        </div>
+        <div class="button-center">
+          <div class="button-text">Connect with MetaMask</div>
+          <div class="button-subtext">Sign a message to verify ownership</div>
+        </div>
+        <div class="button-right">
+          <mat-icon *ngIf="!loading">ti-chevron-right</mat-icon>
+          <mat-progress-spinner *ngIf="loading" diameter="20" mode="indeterminate"></mat-progress-spinner>
+        </div>
+      </button>
+
+      <!-- Feedback -->
+      <app-tx-feedback
+        [state]="feedbackState"
+        [message]="feedbackMessage"
+      ></app-tx-feedback>
+
+      <!-- Register Link -->
+      <p class="register-link">
+        Don't have an account?
+        <a routerLink="/register">Register</a>
+      </p>
+
+      <!-- Bottom Security Note -->
+      <div class="security-note">
+        <mat-icon>ti-lock</mat-icon>
+        <span>No password stored — secured by cryptographic signature</span>
+      </div>
+    </mat-card>
+  </div>
+</div>

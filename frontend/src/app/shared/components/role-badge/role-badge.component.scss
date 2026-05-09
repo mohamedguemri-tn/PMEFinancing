@@ -1,0 +1,28 @@
+.role-badge {
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.role-pme {
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary-dark);
+}
+
+.role-investor {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.role-guarantor {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.role-governor {
+  background-color: var(--color-governor-bg);
+  color: var(--color-governor);
+}

@@ -20,38 +20,54 @@ import { MatSelectModule } from '@angular/material/select';
     MatSelectModule,
   ],
   template: `
-    <h2 mat-dialog-title>Add New Asset</h2>
+    <h2 mat-dialog-title>Add asset</h2>
     <mat-dialog-content>
       <form [formGroup]="assetForm">
-        <mat-form-field appearance="fill">
-          <mat-label>Name</mat-label>
+        <mat-form-field appearance="outline">
+          <mat-label>Asset name</mat-label>
           <input matInput formControlName="name" />
-          <mat-error *ngIf="assetForm.get('name')?.invalid">Name is required</mat-error>
+          <mat-error *ngIf="assetForm.get('name')?.hasError('required')">Asset name is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Asset Type</mat-label>
+        <mat-form-field appearance="outline">
+          <mat-label>Asset type</mat-label>
           <mat-select formControlName="assetType">
-            <mat-option value="machinery">Machinery</mat-option>
-            <mat-option value="property">Property</mat-option>
-            <mat-option value="inventory">Inventory</mat-option>
-            <mat-option value="equipment">Equipment</mat-option>
+            <mat-option value="Equipment">Equipment</mat-option>
+            <mat-option value="Real estate">Real estate</mat-option>
+            <mat-option value="Patent">Patent</mat-option>
+            <mat-option value="Vehicle">Vehicle</mat-option>
+            <mat-option value="Other">Other</mat-option>
           </mat-select>
-          <mat-error *ngIf="assetForm.get('assetType')?.invalid">Asset type is required</mat-error>
+          <mat-error *ngIf="assetForm.get('assetType')?.hasError('required')">Asset type is required</mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Estimated Value</mat-label>
+        <mat-form-field appearance="outline">
+          <mat-label>Estimated value (ETH)</mat-label>
           <input matInput type="number" formControlName="estimatedValue" />
-          <mat-error *ngIf="assetForm.get('estimatedValue')?.invalid">Valid value is required</mat-error>
+          <mat-error *ngIf="assetForm.get('estimatedValue')?.hasError('required')">Estimated value is required</mat-error>
+          <mat-error *ngIf="assetForm.get('estimatedValue')?.hasError('min')">Minimum value is 0.1 ETH</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput rows="4" formControlName="description"></textarea>
         </mat-form-field>
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-raised-button color="primary" [disabled]="assetForm.invalid" (click)="onSave()">Save</button>
+      <button mat-raised-button color="primary" [disabled]="assetForm.invalid" (click)="onSave()">Save asset</button>
     </mat-dialog-actions>
   `,
+  styles: [
+    `
+      form {
+        display: grid;
+        gap: var(--space-3);
+        padding-top: var(--space-2);
+      }
+    `,
+  ],
 })
 export class AddAssetDialogComponent {
   private fb = inject(FormBuilder);
@@ -60,7 +76,8 @@ export class AddAssetDialogComponent {
   assetForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
     assetType: ['', Validators.required],
-    estimatedValue: [0, [Validators.required, Validators.min(1)]],
+    estimatedValue: [0.1, [Validators.required, Validators.min(0.1)]],
+    description: [''],
   });
 
   onSave(): void {

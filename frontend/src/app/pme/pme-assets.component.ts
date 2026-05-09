@@ -1,20 +1,23 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { BehaviorSubject } from 'rxjs';
-import { firstValueFrom } from 'rxjs';
-import { WalletService } from '../auth/wallet.service';
+import { MatDividerModule } from '@angular/material/divider';
+import { AuthService } from '../core/services/auth.service';
 import { environment } from '../../environments/environment';
 import { AddAssetDialogComponent } from './add-asset-dialog.component';
 import { EditAssetDialogComponent } from './edit-asset-dialog.component';
 import { ConfirmDeleteDialogComponent } from './confirm-delete-dialog.component';
+import { TokenizeAssetDialogComponent } from './tokenize-asset-dialog.component';
+import { SharedModule } from '../shared/shared.module';
 
 export interface Asset {
   id: string;
@@ -34,117 +37,202 @@ export interface Asset {
     MatIconModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatPaginatorModule,
+    MatSortModule,
     MatProgressSpinnerModule,
+    MatDividerModule,
     MatChipsModule,
+    SharedModule,
   ],
   template: `
     <div class="assets-container">
-      <h2>My Assets</h2>
-      <button mat-raised-button color="primary" (click)="openAddDialog()">
-        <mat-icon>add</mat-icon>
-        Add Asset
-      </button>
+      <section class="assets-header">
+        <div>
+          <h2>My assets</h2>
+          <p class="subtitle">Track your company assets, tokenization status and collateral usage.</p>
+        </div>
+        <button mat-raised-button color="primary" (click)="openAddDialog()">
+          <mat-icon>add</mat-icon>
+          Add asset
+        </button>
+      </section>
 
-      <table mat-table [dataSource]="(assets$ | async) ?? []" class="assets-table">
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Name</th>
-          <td mat-cell *matCellDef="let asset">{{ asset.name }}</td>
-        </ng-container>
+      <app-empty-state
+        *ngIf="dataSource.data.length === 0"
+        icon="ti-box"
+        title="No assets yet"
+        subtitle="Add your first asset to start tokenizing and financing."
+        buttonLabel="Add your first asset"
+        (buttonClick)="openAddDialog()"
+      ></app-empty-state>
 
-        <ng-container matColumnDef="assetType">
-          <th mat-header-cell *matHeaderCellDef>Type</th>
-          <td mat-cell *matCellDef="let asset">{{ asset.assetType }}</td>
-        </ng-container>
+      <div *ngIf="dataSource.data.length > 0">
+        <table mat-table [dataSource]="dataSource" matSort class="assets-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Asset name</th>
+            <td mat-cell *matCellDef="let asset">{{ asset.name }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="estimatedValue">
-          <th mat-header-cell *matHeaderCellDef>Value</th>
-          <td mat-cell *matCellDef="let asset">{{ asset.estimatedValue | currency }}</td>
-        </ng-container>
+          <ng-container matColumnDef="assetType">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+            <td mat-cell *matCellDef="let asset">{{ asset.assetType }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let asset">
-            <mat-chip [color]="getStatusColor(asset.status)" selected>
-              {{ asset.status }}
-            </mat-chip>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="estimatedValue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Estimated value</th>
+            <td mat-cell *matCellDef="let asset">{{ asset.estimatedValue | number:'1.2-2' }} ETH</td>
+          </ng-container>
 
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let asset">
-            <button mat-icon-button (click)="openEditDialog(asset)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="openDeleteDialog(asset)">
-              <mat-icon>delete</mat-icon>
-            </button>
-            <button
-              *ngIf="asset.status === 'REGISTERED'"
-              mat-raised-button
-              color="accent"
-              (click)="tokenizeAsset(asset)"
-              [disabled]="tokenizingAssets.has(asset.id)"
-            >
-              <mat-spinner *ngIf="tokenizingAssets.has(asset.id)" diameter="20"></mat-spinner>
-              <span *ngIf="!tokenizingAssets.has(asset.id)">Tokenize</span>
-            </button>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let asset">
+              <app-status-badge [status]="asset.status"></app-status-badge>
+            </td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let asset">
+              <div class="actions-cell" [class.row-in-use]="asset.status === 'COLLATERAL'">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  *ngIf="asset.status === 'REGISTERED'"
+                  (click)="openTokenizeDialog(asset)"
+                >
+                  Tokenize
+                </button>
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  *ngIf="asset.status === 'ATO'"
+                  (click)="openEditDialog(asset)"
+                >
+                  Use as collateral
+                </button>
+                <button mat-icon-button aria-label="Edit" (click)="openEditDialog(asset)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button aria-label="Delete" color="warn" *ngIf="asset.status !== 'COLLATERAL'" (click)="openDeleteDialog(asset)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <span class="in-use-label" *ngIf="asset.status === 'COLLATERAL'">In use</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" [class.collateral-row]="row.status === 'COLLATERAL'"></tr>
+        </table>
+
+        <mat-paginator [pageSize]="10" showFirstLastButtons></mat-paginator>
+      </div>
     </div>
   `,
   styles: [
     `
       .assets-container {
-        padding: 24px;
+        padding: var(--space-5);
+        display: grid;
+        gap: var(--space-5);
+      }
+
+      .assets-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--space-4);
+      }
+
+      .assets-header h2 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+      }
+
+      .subtitle {
+        font-size: var(--font-size-base);
+        color: var(--color-text-secondary);
+        margin-top: var(--space-1);
       }
 
       .assets-table {
         width: 100%;
-        margin-top: 24px;
+        border-collapse: collapse;
       }
 
-      mat-chip {
-        text-transform: uppercase;
+      .actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
       }
+
+      .in-use-label {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        font-weight: var(--font-weight-medium);
+      }
+
+      .collateral-row {
+        opacity: 0.55;
+      }
+
     `,
   ],
 })
 export class PmeAssetsComponent implements OnInit {
+  @ViewChild(MatPaginator) paginator?: MatPaginator;
+  @ViewChild(MatSort) sort?: MatSort;
+
+  displayedColumns: string[] = ['name', 'assetType', 'estimatedValue', 'status', 'actions'];
+  dataSource = new MatTableDataSource<Asset>([]);
+
   private http = inject(HttpClient);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
-  private walletService = inject(WalletService);
-
-  displayedColumns: string[] = ['name', 'assetType', 'estimatedValue', 'status', 'actions'];
-  assets$ = new BehaviorSubject<Asset[]>([]);
-  tokenizingAssets = new Set<string>();
+  private authService = inject(AuthService);
 
   ngOnInit(): void {
-  setTimeout(() => this.loadAssets(), 100);
-}
+    this.loadAssets();
+  }
+
+  ngAfterViewInit(): void {
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
+    if (this.sort) {
+      this.dataSource.sort = this.sort;
+    }
+  }
 
   loadAssets(): void {
-  const wallet = this.walletService.currentUser?.walletAddress;
-  console.log('TOKEN AT LOAD TIME:', localStorage.getItem('auth_token'));
-  this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
-    next: (assets) => this.assets$.next(assets),
-    error: (error) => this.snackBar.open('Failed to load assets', 'Close', { duration: 3000 }),
-  });
-}
+    const wallet = this.authService.currentUser?.walletAddress;
+    if (!wallet) {
+      return;
+    }
+
+    this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
+      next: (assets) => {
+        this.dataSource.data = assets;
+      },
+      error: () => {
+        this.dataSource.data = [];
+        this.snackBar.open('Failed to load assets', 'Close', { duration: 3000 });
+      },
+    });
+  }
 
   openAddDialog(): void {
     const dialogRef = this.dialog.open(AddAssetDialogComponent, {
-      width: '400px',
+      width: '480px',
+      panelClass: 'asset-dialog',
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.http.post<Asset>(`${environment.apiUrl}/assets`, result).subscribe({
+        const wallet = this.authService.currentUser?.walletAddress;
+        this.http.post<Asset>(`${environment.apiUrl}/assets`, { ...result, pmeWallet: wallet }).subscribe({
           next: () => {
             this.loadAssets();
             this.snackBar.open('Asset added successfully', 'Close', { duration: 3000 });
@@ -157,7 +245,7 @@ export class PmeAssetsComponent implements OnInit {
 
   openEditDialog(asset: Asset): void {
     const dialogRef = this.dialog.open(EditAssetDialogComponent, {
-      width: '400px',
+      width: '480px',
       data: asset,
     });
 
@@ -176,7 +264,8 @@ export class PmeAssetsComponent implements OnInit {
 
   openDeleteDialog(asset: Asset): void {
     const dialogRef = this.dialog.open(ConfirmDeleteDialogComponent, {
-      width: '300px',
+      width: '320px',
+      height: '160px',
       data: asset,
     });
 
@@ -193,41 +282,20 @@ export class PmeAssetsComponent implements OnInit {
     });
   }
 
-  async tokenizeAsset(asset: Asset): Promise<void> {
-    this.tokenizingAssets.add(asset.id);
-    try {
-      const response = await firstValueFrom(
-        this.http.post<{ transactionHash: string }>(
-          `${environment.apiUrl}/assets/${asset.id}/tokenize`,
-          {}
-        )
-      );
+  openTokenizeDialog(asset: Asset): void {
+    const dialogRef = this.dialog.open(TokenizeAssetDialogComponent, {
+      width: '480px',
+      data: asset,
+      panelClass: 'asset-dialog',
+    });
 
-      if (response?.transactionHash) {
-        // Trigger MetaMask confirmation
-        await this.walletService.confirmTransaction(response.transactionHash);
-        // Update status locally
-        const assets = this.assets$.value;
-        const index = assets.findIndex(a => a.id === asset.id);
-        if (index !== -1) {
-          assets[index].status = 'ATO';
-          this.assets$.next([...assets]);
-        }
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.status === 'ATO') {
+        this.dataSource.data = this.dataSource.data.map((row) =>
+          row.id === result.assetId ? { ...row, status: 'ATO' } : row
+        );
         this.snackBar.open('Asset tokenized successfully', 'Close', { duration: 3000 });
       }
-    } catch (error) {
-      this.snackBar.open('Tokenization failed', 'Close', { duration: 3000 });
-    } finally {
-      this.tokenizingAssets.delete(asset.id);
-    }
-  }
-
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'REGISTERED': return 'primary';
-      case 'ATO': return 'accent';
-      case 'COLLATERAL': return 'warn';
-      default: return '';
-    }
+    });
   }
 }

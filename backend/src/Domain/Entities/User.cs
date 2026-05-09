@@ -18,8 +18,13 @@ public class User : BaseEntity
     public string WalletAddress { get; set; } = string.Empty;
     public Role Role { get; set; }
     public bool IsApproved { get; set; }
-    public string? Nonce { get; set; }  // add this
 
+    // One-to-one profile relationships
+    public PmeProfile? PmeProfile { get; set; }
+    public InvestorProfile? InvestorProfile { get; set; }
+    public GuarantorProfile? GuarantorProfile { get; set; }
+
+    // Asset and loan relationships
     public ICollection<Asset> Assets { get; set; } = new List<Asset>();
     public ICollection<Loan> PmeLoans { get; set; } = new List<Loan>();
     public ICollection<Loan> InvestorLoans { get; set; } = new List<Loan>();

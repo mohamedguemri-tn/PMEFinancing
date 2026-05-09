@@ -1,4 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.sme-financing.com/api'
+  development: false,
+  apiUrl: 'https://api.sme-financing.com/api',
+  contractAddress: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd'
 };

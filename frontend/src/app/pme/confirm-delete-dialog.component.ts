@@ -9,15 +9,29 @@ import { Asset } from './pme-assets.component';
   standalone: true,
   imports: [CommonModule, MatDialogModule, MatButtonModule],
   template: `
-    <h2 mat-dialog-title>Confirm Delete</h2>
-    <mat-dialog-content>
-      Are you sure you want to delete the asset "{{ data.name }}"?
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>No</button>
-      <button mat-raised-button color="warn" (click)="onConfirm()">Yes</button>
-    </mat-dialog-actions>
+    <div class="delete-dialog-shell">
+      <h2 mat-dialog-title>Delete asset?</h2>
+      <mat-dialog-content>
+        Delete {{ data.name }}? This cannot be undone.
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close>No</button>
+        <button mat-raised-button color="warn" (click)="onConfirm()">Delete</button>
+      </mat-dialog-actions>
+    </div>
   `,
+  styles: [
+    `
+      :host { display: block; }
+
+      .delete-dialog-shell {
+        min-height: 140px;
+        display: grid;
+        gap: var(--space-4);
+        padding: var(--space-2);
+      }
+    `,
+  ],
 })
 export class ConfirmDeleteDialogComponent {
   constructor(

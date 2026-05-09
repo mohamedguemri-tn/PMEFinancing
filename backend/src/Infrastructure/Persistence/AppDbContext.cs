@@ -13,6 +13,11 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<PmeProfile> PmeProfiles { get; set; }
+    public DbSet<InvestorProfile> InvestorProfiles { get; set; }
+    public DbSet<GuarantorProfile> GuarantorProfiles { get; set; }
+    public DbSet<Nonce> Nonces { get; set; }
+    public DbSet<BlocklistedToken> BlocklistedTokens { get; set; }
     public DbSet<Asset> Assets { get; set; }
     public DbSet<Loan> Loans { get; set; }
 
@@ -20,14 +25,35 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // User Configuration
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.WalletAddress).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Role).HasConversion<string>().IsRequired().HasMaxLength(20);
-            entity.Property(e => e.IsApproved).IsRequired();
+            entity.Property(e => e.IsApproved).IsRequired().HasDefaultValue(false);
             entity.Property(e => e.CreatedAt).IsRequired();
 
+            // Unique index on WalletAddress
+            entity.HasIndex(e => e.WalletAddress).IsUnique();
+
+            // One-to-one relationships with cascade delete
+            entity.HasOne(e => e.PmeProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<PmeProfile>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.InvestorProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<InvestorProfile>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.GuarantorProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<GuarantorProfile>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Collections
             entity.HasMany(e => e.Assets)
                 .WithOne(e => e.Owner)
                 .HasForeignKey(e => e.OwnerId)
@@ -42,10 +68,57 @@ public class AppDbContext : DbContext
                 .WithOne(e => e.Investor)
                 .HasForeignKey(e => e.InvestorId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasIndex(e => e.WalletAddress).IsUnique();
         });
 
+        // PmeProfile Configuration
+        modelBuilder.Entity<PmeProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CompanyName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Sector).IsRequired().HasMaxLength(100);
+        });
+
+        // InvestorProfile Configuration
+        modelBuilder.Entity<InvestorProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.InvestorType).IsRequired().HasMaxLength(100);
+        });
+
+        // GuarantorProfile Configuration
+        modelBuilder.Entity<GuarantorProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.OrganizationName).IsRequired().HasMaxLength(255);
+        });
+
+        // Nonce Configuration (standalone, WalletAddress indexed)
+        modelBuilder.Entity<Nonce>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.WalletAddress).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Value).IsRequired();
+            entity.Property(e => e.ExpiresAt).IsRequired();
+
+            entity.HasIndex(e => e.WalletAddress);
+        });
+
+        // BlocklistedToken Configuration (Jti indexed)
+        modelBuilder.Entity<BlocklistedToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Jti).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+
+            entity.HasIndex(e => e.Jti);
+        });
+
+        // Asset Configuration
         modelBuilder.Entity<Asset>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -65,6 +138,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.OwnerId);
         });
 
+        // Loan Configuration
         modelBuilder.Entity<Loan>(entity =>
         {
             entity.HasKey(e => e.Id);

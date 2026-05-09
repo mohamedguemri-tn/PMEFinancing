@@ -7,13 +7,35 @@ using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
+using Serilog.Events;
+using Api.Middleware;
 
 Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter())
+    .WriteTo.File("logs/app-.log", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new Serilog.Formatting.Compact.CompactJsonFormatter())
+    .WriteTo.File("logs/app-.log", rollingInterval: RollingInterval.Day));
+
+builder.Services.AddControllers(options =>
+{
+    options.Conventions.Add(new Api.Controllers.DebugControllerConvention(builder.Environment));
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,6 +48,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<ContractConfig>(builder.Configuration.GetSection("ContractConfig"));
 builder.Services.AddScoped<IBlockchainService, BlockchainService>();
 builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<TestDataSeeder>();
+builder.Services.AddHostedService<Api.Services.BlocklistedTokenCleanupService>();
 
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new Exception("JWT Secret missing");
@@ -82,10 +106,29 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var walletAddress = httpContext.User.FindFirst("wallet")?.Value;
+        if (walletAddress != null)
+        {
+            diagnosticContext.Set("WalletAddress", walletAddress);
+        }
+    };
+});
+
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
     seeder.SeedAsync().GetAwaiter().GetResult();
+
+    if (app.Environment.IsDevelopment())
+    {
+        var testSeeder = scope.ServiceProvider.GetRequiredService<TestDataSeeder>();
+        testSeeder.SeedAsync().GetAwaiter().GetResult();
+    }
 }
 
 app.Use(async (context, next) =>
@@ -109,6 +152,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 app.UseAuthentication();
+app.UseMiddleware<Api.Authorization.BlocklistedTokenMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

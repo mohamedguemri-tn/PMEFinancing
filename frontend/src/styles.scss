@@ -1,25 +1,221 @@
-@import "@angular/material/prebuilt-themes/indigo-pink.css";
+@use '@angular/material' as mat;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+@import 'tokens';
 
-/* Global Styles */
+@include mat.core();
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+$primary-palette: (
+  50:  #E6F1FB, 100: #C0D9F5, 200: #96BEF0, 300: #6CA3EA,
+  400: #4D8FE6, 500: #185FA5, 600: #1557A0, 700: #114D98,
+  800: #0E438F, 900: #0C447C,
+  contrast: (
+    50:  #2C2C2A, 100: #2C2C2A, 200: #2C2C2A, 300: #2C2C2A,
+    400: #ffffff, 500: #ffffff, 600: #ffffff, 700: #ffffff,
+    800: #ffffff, 900: #ffffff
+  )
+);
 
-html, body {
-  height: 100%;
-  font-family: 'Roboto', sans-serif;
-  background-color: #fafafa;
-}
+$app-theme: mat.define-light-theme((
+  color: (
+    primary: mat.define-palette($primary-palette, 500, 100, 900),
+    accent:  mat.define-palette(mat.$gray-palette, 600),
+    warn:    mat.define-palette(mat.$red-palette, 700)
+  ),
+  typography: mat.define-typography-config(
+    $font-family: "'Inter', sans-serif",
+    $body-1: mat.define-typography-level(14px, 1.6, 400),
+    $body-2: mat.define-typography-level(14px, 1.6, 500),
+    $button: mat.define-typography-level(13px, 1.6, 500)
+  ),
+  density: -1
+));
+
+@include mat.all-component-themes($app-theme);
+
+/* ── Reset ─────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: var(--font-size-md); }
 
 body {
-  margin: 0;
-  padding: 0;
+  font-family: var(--font-base);
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  background: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Material Overrides */
-app-root {
-  display: block;
+/* ── Material Card ─────────────────────────────────────── */
+.mat-mdc-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: none !important;
+  border: 0.5px solid var(--color-border) !important;
+  background: var(--color-bg-card) !important;
+}
+.mat-mdc-card-content { padding: var(--space-4) !important; }
+
+/* ── Material Form Fields ──────────────────────────────── */
+.mat-mdc-form-field {
+  width: 100%;
+  font-size: var(--font-size-base) !important;
+}
+/* Outline border radius */
+.mdc-notched-outline__leading  { border-radius: var(--radius-md) 0 0 var(--radius-md) !important; }
+.mdc-notched-outline__trailing { border-radius: 0 var(--radius-md) var(--radius-md) 0 !important; }
+.mdc-notched-outline__leading,
+.mdc-notched-outline__notch,
+.mdc-notched-outline__trailing {
+  border-color: var(--color-border-strong) !important;
+}
+/* Input text size */
+.mat-mdc-input-element,
+.mat-mdc-select-value-text {
+  font-size: var(--font-size-base) !important;
+  color: var(--color-text-primary) !important;
+}
+/* Label size */
+.mdc-floating-label,
+.mat-mdc-form-field-subscript-wrapper {
+  font-size: var(--font-size-base) !important;
+}
+
+/* ── Material Buttons ──────────────────────────────────── */
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button {
+  border-radius: var(--radius-md) !important;
+  font-weight: var(--font-weight-medium) !important;
+  font-size: var(--font-size-base) !important;
+  box-shadow: none !important;
+  letter-spacing: 0 !important;
+}
+.mat-mdc-icon-button { border-radius: var(--radius-md) !important; }
+
+/* ── Material Snackbar ─────────────────────────────────── */
+.mat-mdc-snack-bar-container {
+  border-radius: var(--radius-md) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+/* ── Material Dialog ───────────────────────────────────── */
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10) !important;
+  border: 0.5px solid var(--color-border) !important;
+}
+.mat-mdc-dialog-title { font-size: var(--font-size-lg) !important; font-weight: var(--font-weight-medium) !important; }
+.mat-mdc-dialog-actions { padding: var(--space-3) var(--space-4) var(--space-4) !important; gap: var(--space-2) !important; }
+
+/* ── Material Tabs ─────────────────────────────────────── */
+.mat-mdc-tab-header { border-bottom: 0.5px solid var(--color-border) !important; }
+.mdc-tab__text-label { font-size: var(--font-size-md) !important; letter-spacing: 0 !important; }
+.mdc-tab-indicator__content--underline { border-color: var(--color-primary) !important; }
+
+/* ── Material Table ────────────────────────────────────── */
+.mat-mdc-table { background: transparent !important; width: 100%; }
+.mat-mdc-header-cell {
+  font-size: var(--font-size-xs) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-secondary) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 0.5px solid var(--color-border-strong) !important;
+  padding: var(--space-3) var(--space-3) !important;
+}
+.mat-mdc-cell {
+  font-size: var(--font-size-md) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 0.5px solid var(--color-border) !important;
+  padding: var(--space-3) var(--space-3) !important;
+}
+.mat-mdc-row:hover { background: var(--color-surface) !important; }
+
+/* ── Material Chips ────────────────────────────────────── */
+.mat-mdc-chip {
+  border-radius: var(--radius-pill) !important;
+  font-size: var(--font-size-xs) !important;
+  height: 24px !important;
+}
+
+/* ── Material Stepper ──────────────────────────────────── */
+.mat-stepper-horizontal, .mat-stepper-vertical {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.mat-step-header .mat-step-label { font-size: var(--font-size-base) !important; }
+
+/* ── Material Paginator ────────────────────────────────── */
+.mat-mdc-paginator { font-size: var(--font-size-base) !important; }
+
+/* ── Material Progress Bar ─────────────────────────────── */
+.mat-mdc-progress-bar { border-radius: var(--radius-pill) !important; }
+
+/* ── Remove ALL elevation shadows globally ─────────────── */
+[class*="mat-elevation-z"] { box-shadow: none !important; }
+.mdc-list-item { box-shadow: none !important; }
+
+/* ── Sidenav ───────────────────────────────────────────── */
+.mat-sidenav-container { background: var(--color-bg-card) !important; }
+.mat-drawer { box-shadow: none !important; border-right: 0.5px solid var(--color-border) !important; }
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ── Utility classes ───────────────────────────────────── */
+.text-muted    { color: var(--color-text-muted) !important; }
+.text-secondary { color: var(--color-text-secondary) !important; }
+.font-medium   { font-weight: var(--font-weight-medium) !important; }
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  h2, h3 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+}
+.page-shell {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+.stat-card {
+  padding: var(--space-4) !important;
+  background: var(--color-surface) !important;
+  border: none !important;
+  .stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: var(--font-weight-medium);
+  }
+  .stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    margin-top: var(--space-2);
+  }
+}
+.empty-state {
+  display: grid;
+  gap: var(--space-4);
+  align-items: center;
+  justify-items: center;
+  padding: var(--space-7) var(--space-5);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+  .empty-icon { font-size: 40px; width: 40px; height: 40px; color: var(--color-text-muted); }
+  h3 { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); }
+  p  { font-size: var(--font-size-base); color: var(--color-text-muted); }
 }

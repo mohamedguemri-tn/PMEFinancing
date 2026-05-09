@@ -136,6 +136,26 @@ public class BlockchainService : IBlockchainService
         }
     }
 
+    public async Task<string> RegisterUserAsync(string walletAddress, string role)
+    {
+        try
+        {
+            var web3 = CreateWeb3(walletAddress);
+            var contract = web3.Eth.GetContract(_config.RoleManagerAbi, _config.RoleManagerAddress);
+            var function = contract.GetFunction("registerUser");
+            var gas = await function.EstimateGasAsync(walletAddress, walletAddress, role);
+            return await function.SendTransactionAsync(walletAddress, gas, null, walletAddress, role);
+        }
+        catch (RpcResponseException ex)
+        {
+            throw new BlockchainException("RoleManager.registerUser transaction failed.", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new BlockchainException("Unexpected error during governor approval blockchain call.", ex);
+        }
+    }
+
     private Web3 CreateWeb3(string sender)
     {
         return new Web3(_config.RpcUrl);

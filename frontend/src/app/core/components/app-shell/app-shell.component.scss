@@ -1,0 +1,209 @@
+.sidenav-container {
+  height: 100vh;
+}
+
+.app-sidenav {
+  width: 220px;
+  background-color: var(--color-bg-card);
+  border-right: 0.5px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Logo Section */
+.logo-section {
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo-square {
+  width: 28px;
+  height: 28px;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    color: var(--color-bg-card);
+    font-size: var(--font-size-md);
+  }
+}
+
+.logo-text {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* Navigation Section */
+.nav-section {
+  flex: 1;
+  padding: var(--space-3) 0;
+}
+
+.section-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 0 var(--space-3) var(--space-1);
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--space-1);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: var(--color-surface);
+  }
+
+  &.active {
+    background-color: var(--color-primary-bg);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  mat-icon {
+    font-size: var(--font-size-md);
+    width: var(--font-size-md);
+    height: var(--font-size-md);
+  }
+
+  .badge {
+    margin-left: auto;
+    background-color: var(--color-danger);
+    color: var(--color-bg-card);
+    border-radius: var(--radius-md);
+    padding: 2px var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    min-width: 16px;
+    text-align: center;
+  }
+}
+
+.nav-section-bottom {
+  padding: var(--space-1);
+  margin-top: auto;
+
+  .nav-item {
+    &.logout {
+      color: var(--color-danger);
+
+      mat-icon {
+        color: var(--color-danger);
+      }
+    }
+  }
+}
+
+/* Wallet Card */
+.wallet-card {
+  margin: var(--space-3);
+  padding: 10px;
+  background-color: var(--color-bg-card);
+  border: 0.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  .wallet-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+  }
+
+  .wallet-address {
+    font-family: monospace;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-1);
+  }
+
+  app-role-badge {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Main Content */
+.main-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Navbar */
+.app-toolbar {
+  height: 52px;
+  background-color: var(--color-bg-card);
+  border-bottom: 0.5px solid var(--color-border);
+  padding: 0 var(--space-3);
+
+  .hamburger {
+    margin-right: var(--space-3);
+  }
+
+  .page-title {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+
+    .wallet-chip {
+      font-family: monospace;
+      font-size: var(--font-size-sm);
+      background-color: var(--color-surface);
+      color: var(--color-text-primary);
+    }
+
+    app-role-badge {
+      font-size: var(--font-size-xs);
+    }
+  }
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  padding: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 959px) {
+  .content-area {
+    padding: var(--space-3);
+  }
+}

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
-import { BrowserProvider } from 'ethers';
+import { BrowserProvider, parseEther, formatEther } from 'ethers';
 import { environment } from '../../environments/environment';
 import { CurrentUser } from './auth.models';
 
@@ -127,6 +127,7 @@ export class WalletService {
     return {
       walletAddress: walletAddress.toLowerCase(),
       role: role.toUpperCase(),
+      userId: String(decoded['userId'] || ''),
     };
   }
 
@@ -152,4 +153,31 @@ export class WalletService {
     const provider = new BrowserProvider(window.ethereum as any);
     await provider.waitForTransaction(txHash);
   }
+
+  public async getBalance(): Promise<string> {
+    if (!window.ethereum) {
+      throw new Error('MetaMask is not available in this browser.');
+    }
+
+    const provider = new BrowserProvider(window.ethereum as any);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    const balance = await provider.getBalance(address);
+    return formatEther(balance);
+  }
+
+  public async sendEth(to: string, amountEth: string): Promise<string> {
+    if (!window.ethereum) {
+      throw new Error('MetaMask is not available in this browser.');
+    }
+
+    const provider = new BrowserProvider(window.ethereum as any);
+    const signer = await provider.getSigner();
+    const tx = await signer.sendTransaction({
+      to,
+      value: parseEther(amountEth),
+    });
+    return tx.hash;
+  }
 }
+
