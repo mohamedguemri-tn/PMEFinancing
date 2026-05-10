@@ -1,4 +1,4 @@
-import { Component, inject, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -62,7 +62,7 @@ import type { Asset } from './pme-assets.component';
   ],
 })
 export class TokenizeAssetDialogComponent {
-  @Inject(MAT_DIALOG_DATA) public data!: Asset;
+  public data = inject<Asset>(MAT_DIALOG_DATA);
 
   private http = inject(HttpClient);
   private walletService = inject(WalletService);
@@ -98,9 +98,10 @@ export class TokenizeAssetDialogComponent {
       this.txMessage = 'Tokenization successful';
 
       setTimeout(() => this.dialogRef.close({ status: 'ATO', assetId: this.data.id }), 900);
-    } catch (error) {
-      this.txState = 'error';
-      this.txMessage = 'Tokenization failed';
-    }
+    } catch (error: any) {
+  this.txState = 'error';
+  this.txMessage = error?.error?.message ?? error?.message ?? 'Tokenization failed';
+  console.error('Tokenize error:', error);
+}
   }
 }

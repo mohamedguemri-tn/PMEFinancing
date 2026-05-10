@@ -1,8 +1,6 @@
 using MediatR;
-
 namespace Application.Assets.Commands;
-
-public class UpdateAssetCommand : IRequest
+public class UpdateAssetCommand : IRequest<Unit>
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

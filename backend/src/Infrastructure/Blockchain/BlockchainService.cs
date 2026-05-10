@@ -113,7 +113,7 @@ public class BlockchainService : IBlockchainService
     {
         try
         {
-            var web3 = new Web3(_config.RpcUrl);
+            var web3 = new Web3(new RpcClient(new Uri(_config.RpcUrl)));
             var contract = web3.Eth.GetContract(_config.AssetTokenAbi, _config.AssetTokenAddress);
             var function = contract.GetFunction("getAsset");
             var asset = await function.CallDeserializingToObjectAsync<AssetTokenOutputDto>(tokenId);
@@ -158,7 +158,7 @@ public class BlockchainService : IBlockchainService
 
     private Web3 CreateWeb3(string sender)
     {
-        return new Web3(_config.RpcUrl);
+        return new Web3(new RpcClient(new Uri(_config.RpcUrl)));
     }
 
     private static BigInteger ConvertToWei(decimal amount)

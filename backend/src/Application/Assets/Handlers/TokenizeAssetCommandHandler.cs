@@ -3,6 +3,7 @@ using Domain.Entities;
 using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Assets.Handlers;
 
@@ -19,7 +20,9 @@ public class TokenizeAssetCommandHandler : IRequestHandler<TokenizeAssetCommand,
 
     public async Task<string> Handle(TokenizeAssetCommand request, CancellationToken cancellationToken)
     {
-        var asset = await _context.Assets.FindAsync(request.Id, cancellationToken);
+        var asset = await _context.Assets
+    .Include(a => a.Owner)
+    .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken);
         if (asset == null) throw new Exception("Asset not found");
 
         var txHash = await _blockchainService.TokenizeAssetAsync(asset.Owner.WalletAddress, request.TokenURI, asset.AssetType);
