@@ -9,12 +9,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { SharedModule } from '../shared/shared.module';
 import { environment } from '../../environments/environment';
-import { interval, switchMap, startWith } from 'rxjs';
+import { interval, switchMap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { FundLoanDialogComponent } from './fund-loan-dialog.component';
+import { PaginatedResult } from '../shared/models/paginated-result';
 
 interface MarketLoan {
   id: string;
@@ -32,7 +34,7 @@ interface MarketLoan {
 @Component({
   selector: 'app-investor-marketplace',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatInputModule, MatChipsModule, MatDialogModule, MatSnackBarModule, SharedModule],
+  imports: [CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatInputModule, MatChipsModule, MatDialogModule, MatSnackBarModule, MatPaginatorModule, SharedModule],
   template: `
     <div class="marketplace-shell">
       <div class="marketplace-header">
@@ -53,14 +55,23 @@ interface MarketLoan {
         <mat-chip-option [selected]="selectedFilter === 'SHORT'" (click)="setFilter('SHORT')">Short term</mat-chip-option>
       </mat-chip-listbox>
 
-      <app-empty-state
-        *ngIf="filteredLoans.length === 0"
-        icon="account_balance"
-        title="No loan requests available"
-        subtitle="Check back soon — new requests are refreshed every 30 seconds."
-      ></app-empty-state>
+      <app-loading-or-empty
+        *ngIf="loadingState !== 'loaded'"
+        [state]="loadingState"
+        emptyText="No loan requests available. Check back soon — new requests are refreshed every 30 seconds."
+        [errorText]="errorMessage"
+        (retry)="load()"
+      ></app-loading-or-empty>
 
-      <div class="loan-grid" *ngIf="filteredLoans.length > 0">
+      <ng-container *ngIf="loadingState === 'loaded'">
+        <app-empty-state
+          *ngIf="filteredLoans.length === 0"
+          icon="account_balance"
+          title="No matching loans"
+          subtitle="Try adjusting your search or filter."
+        ></app-empty-state>
+
+        <div class="loan-grid" *ngIf="filteredLoans.length > 0">
         <mat-card class="loan-card" *ngFor="let loan of filteredLoans">
           <div class="loan-top-row">
             <div class="loan-title">{{ loan.smeName }}</div>
@@ -83,6 +94,15 @@ interface MarketLoan {
           </div>
         </mat-card>
       </div>
+      <mat-paginator
+        [length]="totalCount"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[6, 12, 24]"
+        [pageIndex]="currentPage - 1"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+      </ng-container>
     </div>
   `,
   styles: [
@@ -215,6 +235,12 @@ export class InvestorMarketplaceComponent {
   searchControl = new FormControl('');
   selectedFilter: 'ALL' | 'LOW' | 'HIGH' | 'SHORT' = 'ALL';
   loans: MarketLoan[] = [];
+  loadingState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  errorMessage = '';
+
+  currentPage = 1;
+  pageSize = 12;
+  totalCount = 0;
 
   private http = inject(HttpClient);
   private dialog = inject(MatDialog);
@@ -222,16 +248,46 @@ export class InvestorMarketplaceComponent {
   private destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.load();
+    // Background refresh preserves current page — does not reset to page 1.
     interval(30000)
       .pipe(
-        startWith(0),
         takeUntilDestroyed(this.destroyRef),
-        switchMap(() => this.http.get<MarketLoan[]>(`${environment.apiUrl}/loans`))
+        switchMap(() => this.http.get<PaginatedResult<MarketLoan>>(`${environment.apiUrl}/loans`, {
+          params: { page: this.currentPage, pageSize: this.pageSize }
+        }))
       )
       .subscribe({
-        next: (loans) => (this.loans = loans),
-        error: () => this.snackBar.open('Failed to refresh loan requests', 'Close', { duration: 3000 }),
+        next: (result) => {
+          this.loans = result.items;
+          this.totalCount = result.totalCount;
+        },
+        error: () => {},
       });
+  }
+
+  load(): void {
+    this.loadingState = 'loading';
+    this.http.get<PaginatedResult<MarketLoan>>(`${environment.apiUrl}/loans`, {
+      params: { page: this.currentPage, pageSize: this.pageSize }
+    }).subscribe({
+      next: (result) => {
+        this.loans = result.items;
+        this.totalCount = result.totalCount;
+        this.loadingState = result.totalCount > 0 ? 'loaded' : 'empty';
+      },
+      error: () => {
+        this.loans = [];
+        this.loadingState = 'error';
+        this.errorMessage = 'Failed to load loan requests. Please try again.';
+      },
+    });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.load();
   }
 
   get filteredLoans(): MarketLoan[] {
@@ -249,6 +305,7 @@ export class InvestorMarketplaceComponent {
 
   setFilter(filter: 'ALL' | 'LOW' | 'HIGH' | 'SHORT'): void {
     this.selectedFilter = filter;
+    this.currentPage = 1;
   }
 
   openFundDialog(loan: MarketLoan): void {

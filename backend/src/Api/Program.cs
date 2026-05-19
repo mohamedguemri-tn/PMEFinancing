@@ -1,18 +1,18 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading.RateLimiting;
+using Api;
 using Api.Authorization;
+using Api.Middleware;
 using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 using Serilog.Events;
-using Api.Middleware;
-
-Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
-Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,19 +69,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = key,
             ClockSkew = TimeSpan.FromMinutes(5)
         };
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                Console.WriteLine($"JWT FAILED: {context.Exception.Message}");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("JWT VALIDATED OK");
-                return Task.CompletedTask;
-            }
-        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -104,6 +91,55 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+
+        var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfterValue)
+            ? (int)retryAfterValue.TotalSeconds
+            : 60;
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            status = 429,
+            message = "Too many requests. Please wait before trying again.",
+            retryAfterSeconds = retryAfter
+        }, cancellationToken);
+    };
+
+    // Nonce: max 5 requests per IP per minute — prevents wallet enumeration.
+    options.AddFixedWindowLimiter(RateLimitPolicies.Nonce, policy =>
+    {
+        policy.PermitLimit = 5;
+        policy.Window = TimeSpan.FromMinutes(1);
+        policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        policy.QueueLimit = 0;
+    });
+
+    // Register: max 3 requests per IP per 10 minutes — prevents registration spam.
+    options.AddFixedWindowLimiter(RateLimitPolicies.Register, policy =>
+    {
+        policy.PermitLimit = 3;
+        policy.Window = TimeSpan.FromMinutes(10);
+        policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        policy.QueueLimit = 0;
+    });
+
+    // Login: max 10 requests per IP per minute — more lenient; user may retry after nonce expiry.
+    options.AddFixedWindowLimiter(RateLimitPolicies.Login, policy =>
+    {
+        policy.PermitLimit = 10;
+        policy.Window = TimeSpan.FromMinutes(1);
+        policy.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        policy.QueueLimit = 0;
+    });
+});
+
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
@@ -121,6 +157,9 @@ app.UseSerilogRequestLogging(options =>
 
 using (var scope = app.Services.CreateScope())
 {
+    // Force blockchain config validation on startup — throws BlockchainException if key is missing.
+    scope.ServiceProvider.GetRequiredService<IBlockchainService>();
+
     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
     seeder.SeedAsync().GetAwaiter().GetResult();
 
@@ -130,14 +169,6 @@ using (var scope = app.Services.CreateScope())
         testSeeder.SeedAsync().GetAwaiter().GetResult();
     }
 }
-
-app.Use(async (context, next) =>
-{
-    var auth = context.Request.Headers["Authorization"].ToString();
-    Console.WriteLine($"RAW AUTH HEADER LENGTH: {auth.Length}");
-    Console.WriteLine($"RAW AUTH HEADER: {auth}");
-    await next();
-});
 
 if (app.Environment.IsDevelopment())
 {
@@ -152,7 +183,21 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseMiddleware<Api.Authorization.BlocklistedTokenMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+
+// Belt-and-suspenders: block /api/debug/* at the routing layer in non-Development.
+// The controller actions already return 404 via IsDev guards, but this stops
+// the request even reaching the controller if the environment var is misconfigured.
+if (!app.Environment.IsDevelopment())
+{
+    app.Map("/api/debug/{**path}", (HttpContext ctx) =>
+    {
+        ctx.Response.StatusCode = 404;
+        return Task.CompletedTask;
+    });
+}
+
 app.Run();

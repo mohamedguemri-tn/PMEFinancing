@@ -56,7 +56,15 @@ interface AccessUser {
         </mat-form-field>
       </div>
 
-      <mat-card>
+      <app-loading-or-empty
+        *ngIf="loadingState !== 'loaded'"
+        [state]="loadingState"
+        emptyText="No approved users yet."
+        [errorText]="errorMessage"
+        (retry)="loadUsers()"
+      ></app-loading-or-empty>
+
+      <mat-card *ngIf="loadingState === 'loaded'">
         <table mat-table [dataSource]="dataSource" class="mat-elevation-z0">
           <ng-container matColumnDef="user">
             <th mat-header-cell *matHeaderCellDef>User</th>
@@ -158,6 +166,8 @@ export class GovernorAccessComponent implements OnInit, AfterViewInit {
   columns = ['user', 'role', 'status', 'approvedAt', 'actions'];
   dataSource = new MatTableDataSource<AccessUser>([]);
   searchControl = new FormControl('');
+  loadingState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  errorMessage = '';
 
   @ViewChild(MatPaginator) paginator?: MatPaginator;
   @ViewChild(MatSort) sort?: MatSort;
@@ -183,14 +193,18 @@ export class GovernorAccessComponent implements OnInit, AfterViewInit {
   }
 
   loadUsers(): void {
+    this.loadingState = 'loading';
     this.http.get<AccessUser[]>(`${environment.apiUrl}/governor/access`).subscribe({
       next: (users) => {
         this.dataSource.data = users;
         this.dataSource.filterPredicate = (data: AccessUser, filter: string) =>
           data.fullName.toLowerCase().includes(filter) || data.walletAddress.toLowerCase().includes(filter);
+        this.loadingState = users.length ? 'loaded' : 'empty';
       },
       error: () => {
         this.dataSource.data = [];
+        this.loadingState = 'error';
+        this.errorMessage = 'Failed to load users. Please try again.';
       },
     });
   }

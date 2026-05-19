@@ -6,10 +6,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SharedModule } from '../shared/shared.module';
 import { AuthService } from '../core/services/auth.service';
 import { environment } from '../../environments/environment';
+import { RepayLoanDialogComponent } from './repay-loan-dialog.component';
+import { PaginatedResult } from '../shared/models/paginated-result';
 
 interface Asset {
   id: string;
@@ -20,10 +22,12 @@ interface Asset {
 }
 
 interface ActiveLoan {
-  amount: number;
-  collateralName: string;
-  progress: number;
-  nextRepayment: string;
+  id: string;
+  requestedAmount: number;
+  assetName: string;
+  durationDays: number;
+  status: string;
+  onChainLoanId?: number;
 }
 
 @Component({
@@ -36,8 +40,9 @@ interface ActiveLoan {
     MatTableModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressBarModule,
+    MatDialogModule,
     SharedModule,
+    RepayLoanDialogComponent,
   ],
   template: `
     <div class="dashboard-shell">
@@ -105,13 +110,12 @@ interface ActiveLoan {
         <div class="loan-card-header">
           <div>
             <div class="loan-label">Active loan</div>
-            <div class="loan-amount">{{ activeLoan.amount | number:'1.2-2' }} ETH</div>
+            <div class="loan-amount">{{ activeLoan.requestedAmount | number:'1.2-2' }} ETH</div>
           </div>
-          <button mat-flat-button color="primary">Repay</button>
+          <button mat-flat-button color="primary" (click)="repayActiveLoan()">Repay</button>
         </div>
-        <div class="loan-detail">Collateral: {{ activeLoan.collateralName }}</div>
-        <mat-progress-bar mode="determinate" [value]="activeLoan.progress"></mat-progress-bar>
-        <div class="loan-footer">Next repayment: {{ activeLoan.nextRepayment }}</div>
+        <div class="loan-detail">Collateral: {{ activeLoan.assetName }}</div>
+        <div class="loan-footer">Duration: {{ activeLoan.durationDays }} days</div>
       </mat-card>
     </div>
   `,
@@ -217,6 +221,7 @@ export class PmeComponent implements OnInit {
 
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private dialog = inject(MatDialog);
 
   readonly recentColumns = ['name', 'type', 'status', 'value'];
 
@@ -230,19 +235,16 @@ export class PmeComponent implements OnInit {
     window.location.href = '/pme/assets';
   }
 
-  private loadDashboard(): void {
+  loadDashboard(): void {
     const wallet = this.authService.currentUser?.walletAddress;
     if (!wallet) return;
 
-    this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
-      next: (assets) => {
-        this.totalAssets = assets.length;
-        this.recentAssets = assets.slice(0, 5);
-        this.activeLoanCount = assets.filter((a) => a.status === 'COLLATERAL').length;
-        this.activeLoanTotalEth = assets
-          .filter((a) => a.status === 'COLLATERAL')
-          .reduce((sum, a) => sum + a.estimatedValue * 0.5, 0);
-        this.repaymentRate = assets.length ? 92 : 0;
+    this.http.get<PaginatedResult<Asset>>(`${environment.apiUrl}/assets`, {
+      params: { pmeWallet: wallet, page: 1, pageSize: 100 },
+    }).subscribe({
+      next: (result) => {
+        this.totalAssets = result.totalCount;
+        this.recentAssets = result.items.slice(0, 5);
       },
       error: () => {
         this.totalAssets = 0;
@@ -250,9 +252,34 @@ export class PmeComponent implements OnInit {
       },
     });
 
-    this.http.get<ActiveLoan | null>(`${environment.apiUrl}/loans/active?pmeWallet=${wallet}`).subscribe({
-      next: (loan) => { this.activeLoan = loan; },
+    this.http.get<PaginatedResult<ActiveLoan>>(`${environment.apiUrl}/loans`, {
+      params: { pmeWallet: wallet, page: 1, pageSize: 100 },
+    }).subscribe({
+      next: (result) => {
+        const funded = result.items.filter((l) => l.status === 'FUNDED');
+        const repaid = result.items.filter((l) => l.status === 'REPAID').length;
+        this.activeLoan = funded[0] || null;
+        this.activeLoanCount = funded.length;
+        this.activeLoanTotalEth = funded.reduce((sum, l) => sum + l.requestedAmount, 0);
+        this.repaymentRate = result.totalCount
+          ? Math.round((repaid / result.totalCount) * 100)
+          : 0;
+      },
       error: () => { this.activeLoan = null; },
+    });
+  }
+
+  repayActiveLoan(): void {
+    if (!this.activeLoan) return;
+    const dialogRef = this.dialog.open(RepayLoanDialogComponent, {
+      width: '480px',
+      data: this.activeLoan,
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.status === 'REPAID') {
+        this.activeLoan = null;
+        this.loadDashboard();
+      }
     });
   }
 }

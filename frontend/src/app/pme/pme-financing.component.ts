@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -14,9 +14,20 @@ import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { SharedModule } from '../shared/shared.module';
-import { WalletService } from '../auth/wallet.service';
+import { AuthService } from '../core/services/auth.service';
 import { environment } from '../../environments/environment';
+import { RepayLoanDialogComponent } from './repay-loan-dialog.component';
+import { firstValueFrom } from 'rxjs';
+import { BrowserProvider, Contract, parseEther } from 'ethers';
+import { PaginatedResult } from '../shared/models/paginated-result';
+
+const LOAN_MANAGER_ABI = [
+  'function requestLoan(uint256 collateralTokenId, uint256 amount, uint256 durationDays) returns (uint256)',
+  'event LoanRequested(uint256 indexed loanId, address indexed pme, uint256 collateralTokenId, uint256 amount, uint256 durationDays)',
+];
 
 interface Asset {
   id: string;
@@ -24,15 +35,16 @@ interface Asset {
   assetType: string;
   estimatedValue: number;
   status: 'REGISTERED' | 'ATO' | 'COLLATERAL';
+  tokenId?: number;
 }
 
 interface LoanRequest {
   id: string;
-  amount: number;
-  collateralName: string;
-  duration: number;
+  requestedAmount: number;
+  assetName: string;
+  durationDays: number;
   status: string;
-  createdAt: string;
+  onChainLoanId?: number;
 }
 
 @Component({
@@ -53,7 +65,10 @@ interface LoanRequest {
     MatIconModule,
     MatSnackBarModule,
     MatDividerModule,
+    MatDialogModule,
+    MatPaginatorModule,
     SharedModule,
+    RepayLoanDialogComponent,
   ],
   template: `
     <div class="financing-shell">
@@ -115,20 +130,27 @@ interface LoanRequest {
 
         <mat-tab label="My loan requests">
           <div class="loan-requests-table">
-            <table mat-table [dataSource]="loanRequests" class="requests-table">
+            <app-loading-or-empty
+              *ngIf="loansLoadingState !== 'loaded'"
+              [state]="loansLoadingState"
+              emptyText="No loan requests yet. Submit your first loan request."
+              [errorText]="loansErrorMessage"
+              (retry)="loadLoanRequests()"
+            ></app-loading-or-empty>
+            <table mat-table [dataSource]="loanRequests" *ngIf="loansLoadingState === 'loaded'" class="requests-table" style="width:100%">
               <ng-container matColumnDef="amount">
                 <th mat-header-cell *matHeaderCellDef>Amount</th>
-                <td mat-cell *matCellDef="let request">{{ request.amount | number:'1.2-2' }} ETH</td>
+                <td mat-cell *matCellDef="let request">{{ request.requestedAmount | number:'1.2-2' }} ETH</td>
               </ng-container>
 
               <ng-container matColumnDef="collateral">
                 <th mat-header-cell *matHeaderCellDef>Collateral</th>
-                <td mat-cell *matCellDef="let request">{{ request.collateralName }}</td>
+                <td mat-cell *matCellDef="let request">{{ request.assetName }}</td>
               </ng-container>
 
               <ng-container matColumnDef="duration">
                 <th mat-header-cell *matHeaderCellDef>Duration</th>
-                <td mat-cell *matCellDef="let request">{{ request.duration }} days</td>
+                <td mat-cell *matCellDef="let request">{{ request.durationDays }} days</td>
               </ng-container>
 
               <ng-container matColumnDef="status">
@@ -136,11 +158,6 @@ interface LoanRequest {
                 <td mat-cell *matCellDef="let request">
                   <app-status-badge [status]="request.status"></app-status-badge>
                 </td>
-              </ng-container>
-
-              <ng-container matColumnDef="createdAt">
-                <th mat-header-cell *matHeaderCellDef>Created</th>
-                <td mat-cell *matCellDef="let request">{{ request.createdAt | date:'mediumDate' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
@@ -153,6 +170,15 @@ interface LoanRequest {
               <tr mat-header-row *matHeaderRowDef="loanColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: loanColumns"></tr>
             </table>
+            <mat-paginator
+              *ngIf="loansLoadingState === 'loaded'"
+              [length]="loansTotalCount"
+              [pageSize]="loansPageSize"
+              [pageSizeOptions]="[5, 10, 25]"
+              [pageIndex]="loansCurrentPage - 1"
+              (page)="onLoansPageChange($event)"
+              showFirstLastButtons>
+            </mat-paginator>
           </div>
         </mat-tab>
       </mat-tab-group>
@@ -231,11 +257,20 @@ export class PmeFinancingComponent implements OnInit {
   loanRequests: LoanRequest[] = [];
   txState: 'idle' | 'waiting' | 'pending' | 'success' | 'error' = 'idle';
   txMessage = '';
+  loansLoadingState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  loansErrorMessage = '';
+  loansCurrentPage = 1;
+  loansPageSize = 10;
+  loansTotalCount = 0;
 
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
   private snackBar = inject(MatSnackBar);
-  private walletService = inject(WalletService);
+  private dialog = inject(MatDialog);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  private preselectAssetId: string | null = null;
 
   constructor() {
     this.loanForm = this.fb.group({
@@ -246,6 +281,11 @@ export class PmeFinancingComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['collateralAssetId']) {
+        this.preselectAssetId = params['collateralAssetId'];
+      }
+    });
     this.loadAssets();
     this.loadLoanRequests();
     this.loanForm.controls['loanAmount'].valueChanges.subscribe(() => {
@@ -270,7 +310,7 @@ export class PmeFinancingComponent implements OnInit {
   }
 
   get loanColumns(): string[] {
-    return ['amount', 'collateral', 'duration', 'status', 'createdAt', 'actions'];
+    return ['amount', 'collateral', 'duration', 'status', 'actions'];
   }
 
   private validateLoanAmount(): void {
@@ -289,14 +329,20 @@ export class PmeFinancingComponent implements OnInit {
   }
 
   private loadAssets(): void {
-    const wallet = this.walletService.currentUser?.walletAddress;
+    const wallet = this.authService.currentUser?.walletAddress;
     if (!wallet) {
       return;
     }
 
-    this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
-      next: (assets) => {
-        this.collateralAssets = assets.filter((asset) => asset.status === 'ATO');
+    this.http.get<PaginatedResult<Asset>>(`${environment.apiUrl}/assets`, {
+      params: { pmeWallet: wallet, page: 1, pageSize: 100 },
+    }).subscribe({
+      next: (result) => {
+        this.collateralAssets = result.items.filter((asset) => asset.status === 'ATO');
+        if (this.preselectAssetId) {
+          this.loanForm.controls['collateralAssetId'].setValue(this.preselectAssetId);
+          this.preselectAssetId = null;
+        }
       },
       error: () => {
         this.collateralAssets = [];
@@ -304,54 +350,114 @@ export class PmeFinancingComponent implements OnInit {
     });
   }
 
-  private loadLoanRequests(): void {
-    const wallet = this.walletService.currentUser?.walletAddress;
+  loadLoanRequests(): void {
+    const wallet = this.authService.currentUser?.walletAddress;
     if (!wallet) {
       return;
     }
 
-    this.http.get<LoanRequest[]>(`${environment.apiUrl}/loans?pmeWallet=${wallet}`).subscribe({
-      next: (requests) => {
-        this.loanRequests = requests;
+    this.loansLoadingState = 'loading';
+    this.http.get<PaginatedResult<LoanRequest>>(`${environment.apiUrl}/loans`, {
+      params: { pmeWallet: wallet, page: this.loansCurrentPage, pageSize: this.loansPageSize }
+    }).subscribe({
+      next: (result) => {
+        this.loanRequests = result.items;
+        this.loansTotalCount = result.totalCount;
+        this.loansLoadingState = result.items.length ? 'loaded' : 'empty';
       },
       error: () => {
         this.loanRequests = [];
+        this.loansLoadingState = 'error';
+        this.loansErrorMessage = 'Failed to load loan requests. Please try again.';
       },
     });
   }
 
-  submitLoanRequest(): void {
-    if (this.loanForm.invalid || !this.selectedCollateral) {
+  onLoansPageChange(event: PageEvent): void {
+    this.loansCurrentPage = event.pageIndex + 1;
+    this.loansPageSize = event.pageSize;
+    this.loadLoanRequests();
+  }
+
+  async submitLoanRequest(): Promise<void> {
+    if (this.loanForm.invalid || !this.selectedCollateral) return;
+
+    const tokenId = this.selectedCollateral.tokenId;
+    if (tokenId == null) {
+      this.txState = 'error';
+      this.txMessage = 'Asset has no on-chain token ID — ensure it is tokenized first';
       return;
     }
 
     this.txState = 'waiting';
-    this.txMessage = 'Preparing loan request';
+    this.txMessage = 'Waiting for MetaMask confirmation…';
 
-    const payload = {
-      collateralAssetId: this.selectedCollateral.id,
-      amount: this.loanForm.value.loanAmount,
-      duration: this.loanForm.value.duration,
-    };
+    try {
+      const loanAmount: number = this.loanForm.value.loanAmount;
+      const durationDays: number = this.loanForm.value.duration;
 
-    this.http.post<LoanRequest>(`${environment.apiUrl}/loans`, payload).subscribe({
-      next: (request) => {
-        this.txState = 'pending';
-        this.txMessage = 'Loan request submitted';
-        setTimeout(() => {
-          this.txState = 'success';
-          this.txMessage = 'Loan request confirmed';
-          this.loanRequests = [request, ...this.loanRequests];
-        }, 900);
-      },
-      error: () => {
-        this.txState = 'error';
-        this.txMessage = 'Loan request failed';
-      },
-    });
+      const provider = new BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const contract = new Contract(environment.loanManagerAddress, LOAN_MANAGER_ABI, signer);
+
+      const tx = await contract['requestLoan'](
+        BigInt(tokenId),
+        parseEther(loanAmount.toString()),
+        BigInt(durationDays)
+      );
+
+      this.txState = 'pending';
+      this.txMessage = 'Transaction pending on Ethereum…';
+
+      const receipt = await tx.wait();
+
+      let onChainLoanId: number | null = null;
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog(log);
+          if (parsed?.name === 'LoanRequested') {
+            onChainLoanId = Number(parsed.args['loanId']);
+            break;
+          }
+        } catch {}
+      }
+
+      if (onChainLoanId === null) throw new Error('LoanRequested event not found in receipt');
+
+      const payload = {
+        collateralAssetId: this.selectedCollateral.id,
+        requestedAmount: loanAmount,
+        durationDays,
+        onChainLoanId,
+        transactionHash: receipt.hash,
+      };
+
+      const request = await firstValueFrom(
+        this.http.post<LoanRequest>(`${environment.apiUrl}/loans`, payload)
+      );
+
+      this.txState = 'success';
+      this.txMessage = 'Loan request confirmed';
+      this.loanRequests = [request, ...this.loanRequests];
+    } catch (error: any) {
+      this.txState = 'error';
+      this.txMessage = error?.error?.message ?? error?.message ?? 'Loan request failed';
+    }
   }
 
   repayLoan(request: LoanRequest): void {
-    this.snackBar.open(`Repay request ${request.id} not implemented`, 'Close', { duration: 3000 });
+    const dialogRef = this.dialog.open(RepayLoanDialogComponent, {
+      width: '480px',
+      data: request,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.status === 'REPAID') {
+        this.loanRequests = this.loanRequests.map((l) =>
+          l.id === result.loanId ? { ...l, status: 'REPAID' } : l
+        );
+        this.snackBar.open('Loan repaid successfully', 'Close', { duration: 3000 });
+      }
+    });
   }
 }

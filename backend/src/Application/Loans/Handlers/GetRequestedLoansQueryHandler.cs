@@ -1,3 +1,4 @@
+using Application.Common.Models;
 using Application.Loans.Queries;
 using Domain.Entities;
 using Infrastructure.Persistence;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Loans.Handlers;
 
-public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQuery, List<LoanDto>>
+public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQuery, PaginatedResult<LoanDto>>
 {
     private readonly AppDbContext _context;
 
@@ -15,15 +16,30 @@ public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQu
         _context = context;
     }
 
-    public async Task<List<LoanDto>> Handle(GetRequestedLoansQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<LoanDto>> Handle(GetRequestedLoansQuery request, CancellationToken cancellationToken)
     {
-        var loans = await _context.Loans
-            .Where(l => l.Status == LoanStatus.REQUESTED)
+        var baseQuery = _context.Loans
             .Include(l => l.Pme).ThenInclude(p => p.PmeProfile)
             .Include(l => l.CollateralAsset)
+            .AsQueryable();
+
+        // PME view: filter by wallet, all statuses.
+        // Marketplace view: no wallet filter, only REQUESTED status.
+        if (!string.IsNullOrWhiteSpace(request.PmeWallet))
+            baseQuery = baseQuery.Where(l => l.Pme.WalletAddress == request.PmeWallet);
+        else
+            baseQuery = baseQuery.Where(l => l.Status == LoanStatus.REQUESTED);
+
+        baseQuery = baseQuery.OrderByDescending(l => l.CreatedAt);
+
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        var loans = await baseQuery
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        return loans.Select(l =>
+        var items = loans.Select(l =>
         {
             var ltv = l.CollateralAsset.EstimatedValue > 0
                 ? Math.Round(l.RequestedAmount / l.CollateralAsset.EstimatedValue * 100, 1)
@@ -46,7 +62,16 @@ public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQu
                 LoanToValue = ltv,
                 Status = l.Status.ToString(),
                 RiskProfile = risk,
+                OnChainLoanId = l.OnChainLoanId,
             };
         }).ToList();
+
+        return new PaginatedResult<LoanDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
     }
 }

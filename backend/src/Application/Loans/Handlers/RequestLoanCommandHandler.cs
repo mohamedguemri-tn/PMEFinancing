@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Loans.Commands;
 using Domain.Entities;
 using Infrastructure.Blockchain;
@@ -26,13 +27,17 @@ public class RequestLoanCommandHandler : IRequestHandler<RequestLoanCommand, Gui
         var asset = await _context.Assets.FindAsync(request.CollateralAssetId, cancellationToken);
         if (asset == null) throw new Exception("Asset not found");
 
+        if (asset.OwnerId != user.Id)
+            throw new ForbiddenActionException("You do not own this asset");
+
         var loan = new Loan
         {
             PmeId = user.Id,
             CollateralAssetId = request.CollateralAssetId,
             RequestedAmount = request.RequestedAmount,
             Status = LoanStatus.REQUESTED,
-            DurationDays = request.DurationDays
+            DurationDays = request.DurationDays,
+            OnChainLoanId = request.OnChainLoanId,
         };
 
         _context.Loans.Add(loan);

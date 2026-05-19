@@ -6,9 +6,9 @@ namespace Infrastructure.Blockchain;
 public interface IBlockchainService
 {
     Task<string> TokenizeAssetAsync(string pmeWallet, string tokenURI, string assetType);
+    Task<long> GetMintedTokenIdAsync(string txHash);
     Task<string> RequestLoanAsync(string pmeWallet, uint tokenId, decimal amount, uint durationDays);
-    Task<string> FundLoanAsync(string investorWallet, uint loanId, decimal amountEth);
-    Task<string> RepayLoanAsync(string pmeWallet, uint loanId, decimal amountEth);
     Task<string> GetAssetStatusAsync(uint tokenId);
     Task<string> RegisterUserAsync(string walletAddress, string role);
+    Task GrantAssetTokenRoleAsync(string pmeWalletAddress);
 }

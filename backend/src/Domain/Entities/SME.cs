@@ -1,3 +1,5 @@
+// NOT USED — stub entity, no DbSet, no handlers, no endpoints.
+// Kept for future implementation reference only.
 namespace Domain.Entities;
 
 using Domain.Common;

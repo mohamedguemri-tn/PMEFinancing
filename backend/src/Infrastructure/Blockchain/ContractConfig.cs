@@ -12,4 +12,7 @@ public class ContractConfig
     public string LoanManagerAddress { get; set; } = string.Empty;
     public string AssetTokenAbi { get; set; } = string.Empty;
     public string LoanManagerAbi { get; set; } = string.Empty;
+    // Governor server-side signing (for grantRole on AssetToken at user approval time)
+    public string GovernorPrivateKey { get; set; } = string.Empty;
+    public string GovernorAddress { get; set; } = string.Empty;
 }

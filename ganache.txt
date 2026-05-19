@@ -1,0 +1,1 @@
+ganache --mnemonic "candy maple cake sugar pudding cream honey rich smooth alcohol ivory utility" --defaultBalanceEther 1000 --port 8545

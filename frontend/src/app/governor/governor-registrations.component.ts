@@ -8,9 +8,10 @@ import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angu
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { environment } from '../../environments/environment';
 import { SharedModule } from '../shared/shared.module';
+import { PaginatedResult } from '../shared/models/paginated-result';
 
 interface PendingUser {
   userId: string;
@@ -25,7 +26,7 @@ interface PendingUser {
   standalone: true,
   imports: [
     CommonModule, MatTableModule, MatButtonModule, MatIconModule,
-    MatDialogModule, MatSnackBarModule, MatChipsModule, MatDividerModule, MatProgressSpinnerModule, SharedModule,
+    MatDialogModule, MatSnackBarModule, MatChipsModule, MatDividerModule, MatPaginatorModule, SharedModule,
   ],
   template: `
     <div class="page-shell">
@@ -39,18 +40,15 @@ interface PendingUser {
         </div>
       </div>
 
-      <app-empty-state
-        *ngIf="pendingUsers.length === 0 && !loading"
-        icon="group"
-        title="No pending registrations"
-        subtitle="All registrations have been reviewed."
-      ></app-empty-state>
+      <app-loading-or-empty
+        *ngIf="loadingState !== 'loaded'"
+        [state]="loadingState"
+        emptyText="No pending registrations. All registrations have been reviewed."
+        [errorText]="errorMessage"
+        (retry)="load()"
+      ></app-loading-or-empty>
 
-      <div *ngIf="loading" class="loading-center">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
-
-      <table mat-table [dataSource]="pendingUsers" *ngIf="pendingUsers.length > 0" class="users-table">
+      <table mat-table [dataSource]="pendingUsers" *ngIf="loadingState === 'loaded'" class="users-table">
         <ng-container matColumnDef="user">
           <th mat-header-cell *matHeaderCellDef>User</th>
           <td mat-cell *matCellDef="let u">
@@ -95,6 +93,15 @@ interface PendingUser {
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
         <tr mat-row *matRowDef="let row; columns: columns"></tr>
       </table>
+      <mat-paginator
+        *ngIf="loadingState === 'loaded'"
+        [length]="totalCount"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5, 10, 25]"
+        [pageIndex]="currentPage - 1"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
     </div>
   `,
   styles: [`
@@ -103,8 +110,7 @@ interface PendingUser {
     .page-header h2 { font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
     .subtitle { color: var(--color-text-secondary); margin-top: var(--space-1); font-size: var(--font-size-base); }
     .count-pill { background: var(--color-warning-bg); color: var(--color-warning); padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); font-weight: var(--font-weight-medium); font-size: var(--font-size-base); white-space: nowrap; }
-    .loading-center { display: flex; justify-content: center; padding: var(--space-7); }
-    .users-table { width: 100%; }
+.users-table { width: 100%; }
     .user-cell { display: flex; align-items: center; gap: var(--space-3); }
     .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--color-primary-bg); color: var(--color-primary); display: grid; place-items: center; font-weight: var(--font-weight-medium); font-size: var(--font-size-sm); flex-shrink: 0; }
     .name { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
@@ -116,7 +122,11 @@ interface PendingUser {
 })
 export class GovernorRegistrationsComponent implements OnInit {
   pendingUsers: PendingUser[] = [];
-  loading = false;
+  loadingState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  errorMessage = '';
+  currentPage = 1;
+  pageSize = 10;
+  totalCount = 0;
   columns = ['user', 'role', 'info', 'submitted', 'actions'];
 
   private http = inject(HttpClient);
@@ -127,11 +137,26 @@ export class GovernorRegistrationsComponent implements OnInit {
   }
 
   load(): void {
-    this.loading = true;
-    this.http.get<PendingUser[]>(`${environment.apiUrl}/admin/users/pending`).subscribe({
-      next: (users) => { this.pendingUsers = users; this.loading = false; },
-      error: () => { this.loading = false; this.snackBar.open('Failed to load registrations', 'Close', { duration: 3000 }); },
+    this.loadingState = 'loading';
+    this.http.get<PaginatedResult<PendingUser>>(`${environment.apiUrl}/admin/users/pending`, {
+      params: { page: this.currentPage, pageSize: this.pageSize }
+    }).subscribe({
+      next: (result) => {
+        this.pendingUsers = result.items;
+        this.totalCount = result.totalCount;
+        this.loadingState = result.items.length ? 'loaded' : 'empty';
+      },
+      error: () => {
+        this.loadingState = 'error';
+        this.errorMessage = 'Failed to load registration requests. Please try again.';
+      },
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.load();
   }
 
   approve(user: PendingUser): void {

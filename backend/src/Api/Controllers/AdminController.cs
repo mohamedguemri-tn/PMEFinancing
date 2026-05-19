@@ -24,10 +24,12 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users/pending")]
-    public async Task<IActionResult> GetPendingUsers()
+    public async Task<IActionResult> GetPendingUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var users = await _mediator.Send(new GetPendingUsersQuery());
-        return Ok(users);
+        var result = await _mediator.Send(new GetPendingUsersQuery { Page = page, PageSize = pageSize });
+        return Ok(result);
     }
 
     [HttpGet("users")]

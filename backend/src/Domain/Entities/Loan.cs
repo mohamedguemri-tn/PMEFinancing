@@ -29,4 +29,5 @@ public class Loan : BaseEntity
     public int DurationDays { get; set; }
     public DateTime? FundedAt { get; set; }
     public DateTime? RepaidAt { get; set; }
+    public long? OnChainLoanId { get; set; }
 }

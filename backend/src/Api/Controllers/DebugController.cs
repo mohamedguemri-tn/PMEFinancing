@@ -11,8 +11,10 @@ using Microsoft.IdentityModel.Tokens;
 namespace Api.Controllers;
 
 /// <summary>
-/// [DEVELOPMENT ONLY] Debug endpoints for rapid testing and state management.
-/// This controller is only intended for use during development and should not be accessible in production.
+/// DEBUG ONLY — This controller must never be reachable in production.
+/// It exposes: full DB reset, JWT generation without authentication, raw state dump.
+/// Protected by: (1) IsDev guard inside each action, (2) /api/debug/* blocked in Program.cs for non-Development.
+/// To fully remove from production binary: move to a separate test-only project.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -127,26 +129,20 @@ public class DebugController : ControllerBase
     {
         if (!IsDev) return NotFound();
 
-        // Delete all except Governor
-        var usersToDelete = _context.Users.Where(u => u.Role != Role.GOVERNOR);
-        var assetsToDelete = _context.Assets;
-        var loansToDelete = _context.Loans;
-        var noncesToDelete = _context.Nonces;
-        var blocklistedToDelete = _context.BlocklistedTokens;
-
-        _context.Loans.RemoveRange(loansToDelete);
-        _context.Assets.RemoveRange(assetsToDelete);
-        _context.Nonces.RemoveRange(noncesToDelete);
-        _context.BlocklistedTokens.RemoveRange(blocklistedToDelete);
+        // Remove all data including all governors so stale rows can't accumulate
+        _context.Loans.RemoveRange(_context.Loans);
+        _context.Assets.RemoveRange(_context.Assets);
+        _context.Nonces.RemoveRange(_context.Nonces);
+        _context.BlocklistedTokens.RemoveRange(_context.BlocklistedTokens);
         await _context.SaveChangesAsync();
 
-        _context.Users.RemoveRange(usersToDelete);
+        _context.Users.RemoveRange(_context.Users);
         await _context.SaveChangesAsync();
 
-        // Restore clean state
+        // Re-seed from scratch with current config values
         await _testDataSeeder.SeedAsync();
 
-        return Ok(new { message = "Test data reset successfully" });
+        return Ok(new { message = "Full reset successful — all users removed and re-seeded" });
     }
 }
 

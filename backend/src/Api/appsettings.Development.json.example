@@ -1,0 +1,5 @@
+{
+  "ContractConfig": {
+    "GovernorPrivateKey": "0xYOUR_GANACHE_ACCOUNT_0_PRIVATE_KEY_HERE"
+  }
+}

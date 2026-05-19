@@ -1,10 +1,13 @@
+using Application.Common.Models;
 using MediatR;
 
 namespace Application.Assets.Queries;
 
-public class GetAssetsByPmeWalletQuery : IRequest<List<AssetDto>>
+public class GetAssetsByPmeWalletQuery : IRequest<PaginatedResult<AssetDto>>
 {
     public string PmeWallet { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
 }
 
 public class AssetDto

@@ -1,12 +1,13 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
@@ -18,6 +19,7 @@ import { EditAssetDialogComponent } from './edit-asset-dialog.component';
 import { ConfirmDeleteDialogComponent } from './confirm-delete-dialog.component';
 import { TokenizeAssetDialogComponent } from './tokenize-asset-dialog.component';
 import { SharedModule } from '../shared/shared.module';
+import { PaginatedResult } from '../shared/models/paginated-result';
 
 export interface Asset {
   id: string;
@@ -25,6 +27,7 @@ export interface Asset {
   assetType: string;
   estimatedValue: number;
   status: 'REGISTERED' | 'ATO' | 'COLLATERAL';
+  tokenId?: number;
 }
 
 @Component({
@@ -51,22 +54,21 @@ export interface Asset {
           <h2>My assets</h2>
           <p class="subtitle">Track your company assets, tokenization status and collateral usage.</p>
         </div>
-        <button mat-raised-button color="primary" (click)="openAddDialog()">
+        <button mat-raised-button color="primary" (click)="openAddDialog()" [disabled]="loadingState === 'loading'">
           <mat-icon>add</mat-icon>
           Add asset
         </button>
       </section>
 
-      <app-empty-state
-        *ngIf="dataSource.data.length === 0"
-        icon="inventory_2"
-        title="No assets yet"
-        subtitle="Add your first asset to start tokenizing and financing."
-        buttonLabel="Add your first asset"
-        (buttonClick)="openAddDialog()"
-      ></app-empty-state>
+      <app-loading-or-empty
+        *ngIf="loadingState !== 'loaded'"
+        [state]="loadingState"
+        emptyText="No assets yet. Add your first asset to start tokenizing and financing."
+        [errorText]="errorMessage"
+        (retry)="loadAssets()"
+      ></app-loading-or-empty>
 
-      <div *ngIf="dataSource.data.length > 0">
+      <div *ngIf="loadingState === 'loaded'">
         <table mat-table [dataSource]="dataSource" matSort class="assets-table">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>Asset name</th>
@@ -106,7 +108,7 @@ export interface Asset {
                   mat-stroked-button
                   color="primary"
                   *ngIf="asset.status === 'ATO'"
-                  (click)="openEditDialog(asset)"
+                  (click)="useAsCollateral(asset)"
                 >
                   Use as collateral
                 </button>
@@ -125,7 +127,14 @@ export interface Asset {
           <tr mat-row *matRowDef="let row; columns: displayedColumns" [class.collateral-row]="row.status === 'COLLATERAL'"></tr>
         </table>
 
-        <mat-paginator [pageSize]="10" showFirstLastButtons></mat-paginator>
+        <mat-paginator
+          [length]="totalCount"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 25]"
+          [pageIndex]="currentPage - 1"
+          (page)="onPageChange($event)"
+          showFirstLastButtons>
+        </mat-paginator>
       </div>
     </div>
   `,
@@ -182,13 +191,19 @@ export interface Asset {
   ],
 })
 export class PmeAssetsComponent implements OnInit {
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
   @ViewChild(MatSort) sort?: MatSort;
 
   displayedColumns: string[] = ['name', 'assetType', 'estimatedValue', 'status', 'actions'];
   dataSource = new MatTableDataSource<Asset>([]);
+  loadingState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  errorMessage = '';
+
+  currentPage = 1;
+  pageSize = 10;
+  totalCount = 0;
 
   private http = inject(HttpClient);
+  private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private authService = inject(AuthService);
@@ -198,9 +213,6 @@ export class PmeAssetsComponent implements OnInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.paginator) {
-      this.dataSource.paginator = this.paginator;
-    }
     if (this.sort) {
       this.dataSource.sort = this.sort;
     }
@@ -212,15 +224,27 @@ export class PmeAssetsComponent implements OnInit {
       return;
     }
 
-    this.http.get<Asset[]>(`${environment.apiUrl}/assets?pmeWallet=${wallet}`).subscribe({
-      next: (assets) => {
-        this.dataSource.data = assets;
+    this.loadingState = 'loading';
+    this.http.get<PaginatedResult<Asset>>(`${environment.apiUrl}/assets`, {
+      params: { pmeWallet: wallet, page: this.currentPage, pageSize: this.pageSize }
+    }).subscribe({
+      next: (result) => {
+        this.dataSource.data = result.items;
+        this.totalCount = result.totalCount;
+        this.loadingState = result.items.length ? 'loaded' : 'empty';
       },
       error: () => {
         this.dataSource.data = [];
-        this.snackBar.open('Failed to load assets', 'Close', { duration: 3000 });
+        this.loadingState = 'error';
+        this.errorMessage = 'Failed to load assets. Please try again.';
       },
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
+    this.loadAssets();
   }
 
   openAddDialog(): void {
@@ -231,9 +255,9 @@ export class PmeAssetsComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        const wallet = this.authService.currentUser?.walletAddress;
-        this.http.post<Asset>(`${environment.apiUrl}/assets`, { ...result, pmeWallet: wallet }).subscribe({
+        this.http.post<Asset>(`${environment.apiUrl}/assets`, result).subscribe({
           next: () => {
+            this.currentPage = 1;
             this.loadAssets();
             this.snackBar.open('Asset added successfully', 'Close', { duration: 3000 });
           },
@@ -280,6 +304,10 @@ export class PmeAssetsComponent implements OnInit {
         });
       }
     });
+  }
+
+  useAsCollateral(asset: Asset): void {
+    this.router.navigate(['/pme/financing'], { queryParams: { collateralAssetId: asset.id } });
   }
 
   openTokenizeDialog(asset: Asset): void {

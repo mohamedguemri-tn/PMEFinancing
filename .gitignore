@@ -79,6 +79,10 @@ packages/
 # dotnet user-secrets.
 secrets.json
 
+# Local developer secrets — never commit
+backend/src/Api/appsettings.Development.json
+backend/src/Api/appsettings.*.local.json
+
 # dotnet publish
 publish/
 PublishProfiles/

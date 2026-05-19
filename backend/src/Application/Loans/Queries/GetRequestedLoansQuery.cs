@@ -1,9 +1,13 @@
+using Application.Common.Models;
 using MediatR;
 
 namespace Application.Loans.Queries;
 
-public class GetRequestedLoansQuery : IRequest<List<LoanDto>>
+public class GetRequestedLoansQuery : IRequest<PaginatedResult<LoanDto>>
 {
+    public string? PmeWallet { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
 }
 
 public class LoanDto
@@ -21,4 +25,5 @@ public class LoanDto
     public decimal LoanToValue { get; set; }
     public string Status { get; set; } = string.Empty;
     public string RiskProfile { get; set; } = string.Empty;
+    public long? OnChainLoanId { get; set; }
 }

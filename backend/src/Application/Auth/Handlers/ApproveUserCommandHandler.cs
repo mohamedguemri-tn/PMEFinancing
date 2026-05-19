@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Application.Auth.Commands;
+using Application.Common.Exceptions;
 using Domain.Entities;
 using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
@@ -28,13 +28,13 @@ public class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand, Uni
     public async Task<Unit> Handle(ApproveUserCommand request, CancellationToken cancellationToken)
     {
         if (request.UserId == Guid.Empty)
-            throw new ValidationException("UserId is required");
+            throw new ValidationException(new Dictionary<string, string[]> { ["UserId"] = ["UserId is required"] });
 
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
 
         if (user == null)
-            throw new KeyNotFoundException("User not found");
+            throw new NotFoundException("User", request.UserId);
 
         user.IsApproved = true;
         await _context.SaveChangesAsync(cancellationToken);
@@ -47,6 +47,19 @@ public class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand, Uni
         catch (Exception ex)
         {
             _logger.LogError(ex, "Governor {GovernorWallet} approval succeeded in SQL but blockchain registerUser failed for user {UserId}", request.GovernorWalletAddress, user.Id);
+        }
+
+        if (user.Role == Role.PME)
+        {
+            try
+            {
+                await _blockchainService.GrantAssetTokenRoleAsync(user.WalletAddress);
+                _logger.LogInformation("AssetToken.grantRole(PME) succeeded for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AssetToken.grantRole(PME) failed for user {UserId} ({Wallet}) — mint will be rejected until fixed", user.Id, user.WalletAddress);
+            }
         }
 
         return Unit.Value;

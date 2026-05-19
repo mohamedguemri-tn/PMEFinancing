@@ -4,6 +4,7 @@ using Application.Auth.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Api.Controllers;
 
@@ -19,6 +20,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("nonce")]
+    [EnableRateLimiting(RateLimitPolicies.Nonce)]
     public async Task<IActionResult> GetNonce([FromBody] GetOrCreateNonceQuery query)
     {
         try
@@ -33,6 +35,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicies.Register)]
     public async Task<IActionResult> Register([FromBody] RegisterUserCommand command)
     {
         try
@@ -47,6 +50,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         try

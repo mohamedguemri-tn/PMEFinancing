@@ -24,9 +24,17 @@ public class LoansController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetRequestedLoans()
+    public async Task<IActionResult> GetRequestedLoans(
+        [FromQuery] string? pmeWallet,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var result = await _mediator.Send(new GetRequestedLoansQuery());
+        var result = await _mediator.Send(new GetRequestedLoansQuery
+        {
+            PmeWallet = pmeWallet,
+            Page = page,
+            PageSize = pageSize
+        });
         return Ok(result);
     }
 
@@ -54,6 +62,7 @@ public class LoansController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> RequestLoan(RequestLoanCommand command)
     {
+        command.PmeWallet = User.FindFirst("wallet")?.Value ?? string.Empty;
         var id = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetRequestedLoans), new { id }, new { id });
     }
@@ -62,6 +71,7 @@ public class LoansController : ControllerBase
     public async Task<IActionResult> FundLoan(Guid id, FundLoanCommand command)
     {
         command.Id = id;
+        command.InvestorWallet = User.FindFirst("wallet")?.Value ?? string.Empty;
         await _mediator.Send(command);
         return NoContent();
     }
@@ -70,6 +80,7 @@ public class LoansController : ControllerBase
     public async Task<IActionResult> RepayLoan(Guid id, RepayLoanCommand command)
     {
         command.Id = id;
+        command.PmeWallet = User.FindFirst("wallet")?.Value ?? string.Empty;
         await _mediator.Send(command);
         return NoContent();
     }

@@ -11,6 +11,7 @@ import { StatusBadgeComponent } from './components/status-badge/status-badge.com
 import { TxFeedbackComponent } from './components/tx-feedback/tx-feedback.component';
 import { StatCardComponent } from './components/stat-card/stat-card.component';
 import { EmptyStateComponent } from './components/empty-state/empty-state.component';
+import { LoadingOrEmptyComponent } from './loading-or-empty.component';
 
 @NgModule({
   declarations: [
@@ -28,6 +29,7 @@ import { EmptyStateComponent } from './components/empty-state/empty-state.compon
     MatDividerModule,
     StatCardComponent,
     EmptyStateComponent,
+    LoadingOrEmptyComponent,
   ],
   exports: [
     /* Angular & Router */
@@ -45,6 +47,7 @@ import { EmptyStateComponent } from './components/empty-state/empty-state.compon
     TxFeedbackComponent,
     StatCardComponent,
     EmptyStateComponent,
+    LoadingOrEmptyComponent,
   ],
 })
 export class SharedModule {}

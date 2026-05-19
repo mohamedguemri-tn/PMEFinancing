@@ -2,18 +2,19 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
 
 namespace Api.Middleware;
 
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IHostEnvironment _env;
+    private readonly ILogger<ExceptionMiddleware> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public ExceptionMiddleware(RequestDelegate next, IHostEnvironment env)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment env)
     {
         _next = next;
+        _logger = logger;
         _env = env;
     }
 
@@ -32,7 +33,7 @@ public class ExceptionMiddleware
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var walletAddress = context.User.FindFirst("wallet")?.Value ?? "anonymous";
-        Log.Error(exception, "Unhandled exception for user {WalletAddress} on {Path}", walletAddress, context.Request.Path);
+        _logger.LogError(exception, "Unhandled exception for user {WalletAddress} on {Path}", walletAddress, context.Request.Path);
 
         context.Response.ContentType = "application/problem+json";
         
