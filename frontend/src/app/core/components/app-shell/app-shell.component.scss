@@ -331,3 +331,90 @@
   .wallet-pill-addr { display: none; }
   .wallet-pill { padding: 4px 8px; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   NOTIFICATION PANEL
+══════════════════════════════════════════════════════════ */
+.notif-bell {
+  position: relative;
+}
+
+::ng-deep .notification-menu {
+  .mat-mdc-menu-content { padding: 0 !important; }
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  min-width: 320px;
+}
+
+.notif-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.notif-mark-read {
+  font-size: var(--font-size-xs) !important;
+  color: var(--color-primary) !important;
+  min-width: auto !important;
+  padding: 0 var(--space-2) !important;
+  height: 28px !important;
+}
+
+.notif-empty {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  min-width: 320px;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 0.5px solid var(--color-border);
+  cursor: default;
+  min-width: 320px;
+  max-width: 380px;
+  transition: background var(--transition-fast);
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--color-surface); }
+}
+
+.notif-unread {
+  background: var(--color-primary-bg);
+
+  &:hover { background: color-mix(in srgb, var(--color-primary-bg) 80%, var(--color-surface)); }
+}
+
+.notif-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.notif-body { flex: 1; min-width: 0; }
+
+.notif-message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.notif-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}

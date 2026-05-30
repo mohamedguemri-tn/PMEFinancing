@@ -1,5 +1,6 @@
 using Application.Auth.Commands;
 using Application.Common.Exceptions;
+using Application.Common.Interfaces;
 using Domain.Entities;
 using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
@@ -14,15 +15,18 @@ public class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand, Uni
     private readonly AppDbContext _context;
     private readonly IBlockchainService _blockchainService;
     private readonly ILogger<ApproveUserCommandHandler> _logger;
+    private readonly INotificationService? _notificationService;
 
     public ApproveUserCommandHandler(
         AppDbContext context,
         IBlockchainService blockchainService,
-        ILogger<ApproveUserCommandHandler> logger)
+        ILogger<ApproveUserCommandHandler> logger,
+        INotificationService? notificationService = null)
     {
         _context = context;
         _blockchainService = blockchainService;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     public async Task<Unit> Handle(ApproveUserCommand request, CancellationToken cancellationToken)
@@ -60,6 +64,18 @@ public class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand, Uni
             {
                 _logger.LogError(ex, "AssetToken.grantRole(PME) failed for user {UserId} ({Wallet}) — mint will be rejected until fixed", user.Id, user.WalletAddress);
             }
+        }
+
+        if (_notificationService != null)
+        {
+            try
+            {
+                await _notificationService.SendToUserAsync(
+                    user.WalletAddress,
+                    "ACCOUNT_APPROVED",
+                    "Your account has been approved. You can now log in.");
+            }
+            catch { /* notification failure must never break the main operation */ }
         }
 
         return Unit.Value;

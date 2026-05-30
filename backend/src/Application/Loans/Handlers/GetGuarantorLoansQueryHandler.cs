@@ -1,38 +1,35 @@
 using Application.Common.Models;
 using Application.Loans.Queries;
-using Domain.Entities;
 using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Loans.Handlers;
 
-public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQuery, PaginatedResult<LoanDto>>
+public class GetGuarantorLoansQueryHandler : IRequestHandler<GetGuarantorLoansQuery, PaginatedResult<LoanDto>>
 {
     private readonly AppDbContext _context;
 
-    public GetRequestedLoansQueryHandler(AppDbContext context)
+    public GetGuarantorLoansQueryHandler(AppDbContext context)
     {
         _context = context;
     }
 
-    public async Task<PaginatedResult<LoanDto>> Handle(GetRequestedLoansQuery request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<LoanDto>> Handle(GetGuarantorLoansQuery request, CancellationToken cancellationToken)
     {
+        var guarantor = await _context.Users
+            .FirstOrDefaultAsync(u => u.WalletAddress == request.GuarantorWallet, cancellationToken);
+
+        if (guarantor == null)
+            return new PaginatedResult<LoanDto> { Items = [], TotalCount = 0, Page = request.Page, PageSize = request.PageSize };
+
         var baseQuery = _context.Loans
             .Include(l => l.Pme).ThenInclude(p => p.PmeProfile)
             .Include(l => l.CollateralAsset)
             .Include(l => l.Guarantor)
             .Include(l => l.GuarantorAsset)
-            .AsQueryable();
-
-        // PME view: filter by wallet, all statuses.
-        // Marketplace view: no wallet filter, only REQUESTED status.
-        if (!string.IsNullOrWhiteSpace(request.PmeWallet))
-            baseQuery = baseQuery.Where(l => l.Pme.WalletAddress == request.PmeWallet);
-        else
-            baseQuery = baseQuery.Where(l => l.Status == LoanStatus.REQUESTED);
-
-        baseQuery = baseQuery.OrderByDescending(l => l.CreatedAt);
+            .Where(l => l.GuarantorId == guarantor.Id)
+            .OrderByDescending(l => l.GuaranteedAt ?? l.CreatedAt);
 
         var totalCount = await baseQuery.CountAsync(cancellationToken);
 
@@ -54,7 +51,7 @@ public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQu
                 Id = l.Id,
                 PmeId = l.PmeId,
                 PmeWallet = l.Pme.WalletAddress,
-                SmeName = l.Pme.PmeProfile?.CompanyName ?? (l.Pme.WalletAddress.Length > 8 ? l.Pme.WalletAddress[..8] + "..." : l.Pme.WalletAddress),
+                SmeName = l.Pme.PmeProfile?.CompanyName ?? l.Pme.WalletAddress,
                 CollateralAssetId = l.CollateralAssetId,
                 AssetName = l.CollateralAsset.Name,
                 CollateralType = l.CollateralAsset.AssetType,
@@ -78,7 +75,7 @@ public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQu
             Items = items,
             TotalCount = totalCount,
             Page = request.Page,
-            PageSize = request.PageSize
+            PageSize = request.PageSize,
         };
     }
 }

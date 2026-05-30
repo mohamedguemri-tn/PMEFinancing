@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Application.Admin.Queries;
 using Application.Auth.Commands;
+using Application.Loans.Queries;
 using Domain.Entities;
 using Infrastructure.Persistence;
 using MediatR;
@@ -42,15 +44,27 @@ public class AdminController : ControllerBase
         return Ok(users);
     }
 
-    [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
+    [HttpGet("loans/overdue")]
+    public async Task<IActionResult> GetOverdueLoans(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var totalUsers = await _context.Users.CountAsync(u => u.IsApproved && u.Role != Role.GOVERNOR);
-        var pendingApprovals = await _context.Users.CountAsync(u => !u.IsApproved);
-        var activeLoans = await _context.Loans.CountAsync(l => l.Status == LoanStatus.FUNDED);
-        var platformTvl = await _context.Assets.SumAsync(a => (decimal?)a.EstimatedValue) ?? 0;
+        var result = await _mediator.Send(new GetOverdueLoansQuery { Page = page, PageSize = pageSize });
+        return Ok(result);
+    }
 
-        return Ok(new { totalUsers, pendingApprovals, activeLoans, platformTvl });
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetPlatformStats()
+    {
+        var stats = await _mediator.Send(new GetPlatformStatsQuery());
+        return Ok(stats);
+    }
+
+    [HttpGet("activity")]
+    public async Task<IActionResult> GetRecentActivity()
+    {
+        var activity = await _mediator.Send(new GetRecentActivityQuery());
+        return Ok(activity);
     }
 
     [HttpPost("users/{id:guid}/approve")]

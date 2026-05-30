@@ -165,9 +165,24 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.CollateralAssetId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(e => e.Guarantor)
+                .WithMany()
+                .HasForeignKey(e => e.GuarantorId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            entity.HasOne(e => e.GuarantorAsset)
+                .WithMany()
+                .HasForeignKey(e => e.GuarantorAssetId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            entity.Property(e => e.GuaranteedAt);
+
             entity.HasIndex(e => e.PmeId);
             entity.HasIndex(e => e.InvestorId);
             entity.HasIndex(e => e.CollateralAssetId);
+            entity.HasIndex(e => e.GuarantorId);
         });
     }
 }

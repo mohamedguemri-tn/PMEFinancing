@@ -1,296 +1,281 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { environment } from '../../environments/environment';
 import { SharedModule } from '../shared/shared.module';
+import { environment } from '../../environments/environment';
 
-interface RegistrationPreview {
-  id: string;
-  name: string;
-  walletAddress: string;
-  role: string;
+interface PlatformStats {
+  totalUsers: number;
+  totalPmes: number;
+  totalInvestors: number;
+  pendingApprovals: number;
+  totalAssets: number;
+  tokenizedAssets: number;
+  totalLoans: number;
+  activeLoans: number;
+  overdueLoans: number;
+  repaidLoans: number;
+  liquidatedLoans: number;
+  totalFundedAmount: number;
+  totalRepaidAmount: number;
 }
 
-interface AuditEvent {
-  id: string;
-  eventType: string;
-  wallet: string;
-  txHash: string;
+interface Activity {
+  type: string;
+  description: string;
   timestamp: string;
+  walletAddress: string;
 }
 
 @Component({
   selector: 'app-governor-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatTableModule, MatButtonModule, MatIconModule, MatDividerModule, MatSnackBarModule, SharedModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, SharedModule],
   template: `
     <div class="dashboard-shell">
-      <section class="stats-grid">
-        <app-stat-card label="Total users" [value]="totalUsers"></app-stat-card>
-        <app-stat-card
-          label="Pending approvals"
-          [value]="pendingApprovals"
-          [color]="pendingApprovals > 0 ? 'warning' : undefined"
-        ></app-stat-card>
-        <app-stat-card label="Active loans" [value]="activeLoans"></app-stat-card>
-        <app-stat-card
-          label="Platform TVL"
-          [value]="(platformTvl | number:'1.2-2') + ' ETH'"
-        ></app-stat-card>
+      <div class="page-header">
+        <div>
+          <h2>Platform overview</h2>
+          <p class="subtitle">Real-time statistics and recent activity across the platform.</p>
+        </div>
+        <button mat-stroked-button (click)="loadAll()">
+          <mat-icon>refresh</mat-icon> Refresh
+        </button>
+      </div>
+
+      <!-- Stats section -->
+      <section>
+        <app-loading-or-empty
+          *ngIf="statsState !== 'loaded'"
+          [state]="statsState"
+          [errorText]="statsError"
+          (retry)="loadStats()"
+        ></app-loading-or-empty>
+
+        <div class="stats-grid" *ngIf="statsState === 'loaded' && stats">
+          <div class="stat-card">
+            <mat-icon class="stat-icon">people</mat-icon>
+            <div class="stat-value">{{ stats.totalUsers }}</div>
+            <div class="stat-label">Total users</div>
+          </div>
+
+          <div class="stat-card" [class.card-warning]="stats.pendingApprovals > 0">
+            <mat-icon class="stat-icon">pending</mat-icon>
+            <div class="stat-value">{{ stats.pendingApprovals }}</div>
+            <div class="stat-label">Pending approvals</div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon class="stat-icon">inventory_2</mat-icon>
+            <div class="stat-value">{{ stats.totalAssets }}</div>
+            <div class="stat-label">Total assets</div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon class="stat-icon">account_balance</mat-icon>
+            <div class="stat-value">{{ stats.activeLoans }}</div>
+            <div class="stat-label">Active loans</div>
+          </div>
+
+          <div class="stat-card" [class.card-danger]="stats.overdueLoans > 0">
+            <mat-icon class="stat-icon">warning</mat-icon>
+            <div class="stat-value">{{ stats.overdueLoans }}</div>
+            <div class="stat-label">Overdue loans</div>
+          </div>
+
+          <div class="stat-card">
+            <mat-icon class="stat-icon">payments</mat-icon>
+            <div class="stat-value">{{ stats.totalFundedAmount | number:'1.2-2' }} ETH</div>
+            <div class="stat-label">Total funded</div>
+          </div>
+        </div>
       </section>
 
-      <section class="overview-row">
-        <mat-card class="preview-card">
-          <div class="preview-header">
-            <div>
-              <h3>Pending registrations</h3>
-              <p class="subtitle">Last 3 requests awaiting review.</p>
-            </div>
-            <button mat-button color="primary" (click)="viewAllRegistrations()">View all →</button>
-          </div>
+      <!-- Activity section -->
+      <section>
+        <h3 class="section-title">Recent activity</h3>
 
-          <app-empty-state
-            *ngIf="pendingRegistrations.length === 0"
-            icon="group"
-            title="No pending registrations"
-            subtitle="All caught up!"
-          ></app-empty-state>
+        <app-loading-or-empty
+          *ngIf="activityState !== 'loaded'"
+          [state]="activityState"
+          emptyText="No recent activity on the platform."
+          [errorText]="activityError"
+          (retry)="loadActivity()"
+        ></app-loading-or-empty>
 
-          <table mat-table [dataSource]="pendingRegistrations" *ngIf="pendingRegistrations.length > 0" class="mat-elevation-z0">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>User</th>
-              <td mat-cell *matCellDef="let item">{{ item.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="wallet">
-              <th mat-header-cell *matHeaderCellDef>Wallet</th>
-              <td mat-cell *matCellDef="let item"><span class="monospace">{{ truncateWallet(item.walletAddress) }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="role">
-              <th mat-header-cell *matHeaderCellDef>Role</th>
-              <td mat-cell *matCellDef="let item"><app-role-badge [role]="item.role"></app-role-badge></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>Actions</th>
-              <td mat-cell *matCellDef="let item">
-                <button mat-button color="primary" (click)="approve(item)">Approve</button>
-                <button mat-button color="warn" (click)="reject(item)">Reject</button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="previewColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: previewColumns"></tr>
-          </table>
-        </mat-card>
-
-        <mat-card class="events-card">
-          <div class="section-header">
-            <h3>Recent audit events</h3>
+        <div class="activity-feed" *ngIf="activityState === 'loaded'">
+          <div class="activity-row" *ngFor="let item of activities">
+            <span class="activity-dot" [ngClass]="dotClass(item.type)">●</span>
+            <span class="activity-type" [ngClass]="typeClass(item.type)">{{ item.type }}</span>
+            <span class="activity-desc">{{ item.description }}</span>
+            <span class="activity-time">{{ timeAgo(item.timestamp) }}</span>
           </div>
-          <div class="event-row" *ngFor="let event of auditEvents">
-            <span class="event-badge" [ngClass]="badgeClass(event.eventType)">{{ event.eventType }}</span>
-            <span class="event-wallet monospace">{{ truncateWallet(event.wallet) }}</span>
-            <a [href]="buildTxLink(event.txHash)" target="_blank" rel="noopener" class="event-tx monospace">
-              {{ truncateHash(event.txHash) }}
-              <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">open_in_new</mat-icon>
-            </a>
-            <span class="event-time">{{ event.timestamp | date:'short' }}</span>
+          <div class="activity-empty" *ngIf="activities.length === 0">
+            No recent activity.
           </div>
-          <div *ngIf="auditEvents.length === 0" class="events-empty">No events yet.</div>
-        </mat-card>
+        </div>
       </section>
     </div>
   `,
   styles: [`
-    .dashboard-shell {
-      display: grid;
-      gap: var(--space-5);
-      padding: var(--space-5);
-    }
+    .dashboard-shell { padding: var(--space-5); display: grid; gap: var(--space-5); }
+
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); }
+    .page-header h2 { font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+    .subtitle { color: var(--color-text-secondary); margin-top: var(--space-1); font-size: var(--font-size-base); }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: var(--space-4);
     }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
 
-    @media (max-width: 960px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr; }
-    }
-
-    .overview-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: var(--space-4);
-    }
-
-    @media (max-width: 960px) {
-      .overview-row { grid-template-columns: 1fr; }
-    }
-
-    .preview-card, .events-card {
-      padding: var(--space-4) !important;
-    }
-
-    .preview-header, .section-header {
+    .stat-card {
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-4);
-      margin-bottom: var(--space-4);
+      flex-direction: column;
+      gap: var(--space-2);
     }
-
-    .preview-header h3, .section-header h3 {
-      font-size: var(--font-size-lg);
-      font-weight: var(--font-weight-medium);
-      color: var(--color-text-primary);
+    .stat-card.card-warning {
+      background: var(--color-warning-bg);
+      border-color: var(--color-warning);
     }
-
-    .subtitle {
-      margin-top: var(--space-1);
-      font-size: var(--font-size-base);
-      color: var(--color-text-muted);
+    .stat-card.card-danger {
+      background: var(--color-danger-bg);
+      border-color: var(--color-danger);
     }
+    .stat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--color-text-secondary); }
+    .stat-value { font-size: var(--font-size-2xl); font-weight: var(--font-weight-medium); color: var(--color-text-primary); line-height: 1.2; }
+    .stat-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: var(--font-weight-medium); }
 
-    table { width: 100%; }
-    .monospace { font-family: monospace, monospace; font-size: var(--font-size-xs); }
+    .section-title { font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); color: var(--color-text-primary); margin-bottom: var(--space-3); }
 
-    .event-row {
+    .activity-feed {
+      background: var(--color-surface);
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .activity-row {
       display: grid;
-      grid-template-columns: auto 1fr auto auto;
-      gap: var(--space-3);
+      grid-template-columns: auto auto 1fr auto;
       align-items: center;
-      padding: var(--space-3) 0;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
       border-bottom: 0.5px solid var(--color-border);
     }
+    .activity-row:last-child { border-bottom: none; }
 
-    .event-badge {
-      padding: var(--space-1) var(--space-2);
-      border-radius: var(--radius-pill);
+    .activity-dot { font-size: 10px; }
+    .dot-funded   { color: var(--color-success); }
+    .dot-repaid   { color: var(--color-governor, #7c3aed); }
+    .dot-requested { color: var(--color-primary); }
+    .dot-liquidated { color: var(--color-danger); }
+    .dot-registered { color: var(--color-primary); }
+
+    .activity-type {
       font-size: var(--font-size-xs);
       font-weight: var(--font-weight-medium);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-pill);
       white-space: nowrap;
+      font-family: monospace;
     }
+    .type-funded    { background: var(--color-success-bg); color: var(--color-success); }
+    .type-repaid    { background: var(--color-governor-bg, #ede9fe); color: var(--color-governor, #7c3aed); }
+    .type-requested { background: var(--color-primary-bg); color: var(--color-primary); }
+    .type-liquidated { background: var(--color-danger-bg); color: var(--color-danger); }
+    .type-registered { background: var(--color-primary-bg); color: var(--color-primary); }
 
-    /* Event badge colors */
-    .badge-user-registered   { background: var(--color-primary-bg);  color: var(--color-primary); }
-    .badge-user-revoked      { background: var(--color-danger-bg);   color: var(--color-danger); }
-    .badge-asset-tokenized   { background: var(--color-governor-bg); color: var(--color-governor); }
-    .badge-loan-funded       { background: var(--color-success-bg);  color: var(--color-success); }
-    .badge-loan-repaid       { background: var(--color-success-bg);  color: var(--color-success); }
-    .badge-loan-defaulted    { background: var(--color-danger-bg);   color: var(--color-danger); }
-
-    .event-wallet, .event-tx {
-      font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .event-tx {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1);
-      color: var(--color-primary);
-      text-decoration: none;
-    }
-
-    .event-time {
-      color: var(--color-text-muted);
-      font-size: var(--font-size-xs);
-      white-space: nowrap;
-    }
-
-    .events-empty {
-      color: var(--color-text-muted);
-      font-size: var(--font-size-base);
-      padding: var(--space-4) 0;
-      text-align: center;
-    }
+    .activity-desc { font-size: var(--font-size-base); color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-time { font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; }
+    .activity-empty { padding: var(--space-5); text-align: center; color: var(--color-text-muted); font-size: var(--font-size-base); }
   `],
 })
 export class GovernorDashboardComponent implements OnInit {
-  totalUsers = 0;
-  pendingApprovals = 0;
-  activeLoans = 0;
-  platformTvl = 0;
-  pendingRegistrations: RegistrationPreview[] = [];
-  auditEvents: AuditEvent[] = [];
-  previewColumns = ['name', 'wallet', 'role', 'actions'];
+  stats: PlatformStats | null = null;
+  activities: Activity[] = [];
+  statsState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  activityState: 'loading' | 'loaded' | 'empty' | 'error' = 'loading';
+  statsError = '';
+  activityError = '';
 
   private http = inject(HttpClient);
-  private router = inject(Router);
 
   ngOnInit(): void {
-    this.loadDashboard();
+    this.loadAll();
   }
 
-  viewAllRegistrations(): void {
-    this.router.navigate(['/governor/registrations']);
+  loadAll(): void {
+    this.loadStats();
+    this.loadActivity();
   }
 
-  approve(item: RegistrationPreview): void {
-    this.http.post(`${environment.apiUrl}/admin/users/${item.id}/approve`, {}).subscribe(() => {
-      this.pendingRegistrations = this.pendingRegistrations.filter((e) => e.id !== item.id);
-      this.pendingApprovals = Math.max(0, this.pendingApprovals - 1);
-    });
-  }
-
-  reject(item: RegistrationPreview): void {
-    this.http.delete(`${environment.apiUrl}/admin/users/${item.id}/reject`).subscribe(() => {
-      this.pendingRegistrations = this.pendingRegistrations.filter((e) => e.id !== item.id);
-      this.pendingApprovals = Math.max(0, this.pendingApprovals - 1);
-    });
-  }
-
-  private loadDashboard(): void {
-    this.http.get<any>(`${environment.apiUrl}/admin/stats`).subscribe({
+  loadStats(): void {
+    this.statsState = 'loading';
+    this.http.get<PlatformStats>(`${environment.apiUrl}/admin/stats`).subscribe({
       next: (data) => {
-        this.totalUsers = data.totalUsers;
-        this.pendingApprovals = data.pendingApprovals;
-        this.activeLoans = data.activeLoans;
-        this.platformTvl = data.platformTvl;
+        this.stats = data;
+        this.statsState = 'loaded';
+      },
+      error: () => {
+        this.statsState = 'error';
+        this.statsError = 'Failed to load platform statistics.';
       },
     });
+  }
 
-    this.http.get<any[]>(`${environment.apiUrl}/admin/users/pending`).subscribe({
-      next: (users) => {
-        this.pendingRegistrations = (users || []).slice(0, 3).map(u => ({
-          id: u.userId,
-          name: u.profileData?.companyName || u.profileData?.fullName || u.walletAddress,
-          walletAddress: u.walletAddress,
-          role: u.role,
-        }));
+  loadActivity(): void {
+    this.activityState = 'loading';
+    this.http.get<Activity[]>(`${environment.apiUrl}/admin/activity`).subscribe({
+      next: (data) => {
+        this.activities = data;
+        this.activityState = data.length ? 'loaded' : 'empty';
       },
-      error: () => { this.pendingRegistrations = []; },
+      error: () => {
+        this.activityState = 'error';
+        this.activityError = 'Failed to load recent activity.';
+      },
     });
   }
 
-  badgeClass(eventType: string): string {
-    return `badge-${eventType.toLowerCase().replace(/_/g, '-')}`;
+  dotClass(type: string): string {
+    const map: Record<string, string> = {
+      LOAN_FUNDED: 'dot-funded',
+      LOAN_REPAID: 'dot-repaid',
+      LOAN_REQUESTED: 'dot-requested',
+      LOAN_LIQUIDATED: 'dot-liquidated',
+      USER_REGISTERED: 'dot-registered',
+    };
+    return map[type] ?? '';
   }
 
-  truncateWallet(value: string): string {
-    return value?.length > 12 ? `${value.slice(0, 6)}...${value.slice(-4)}` : value;
+  typeClass(type: string): string {
+    const map: Record<string, string> = {
+      LOAN_FUNDED: 'type-funded',
+      LOAN_REPAID: 'type-repaid',
+      LOAN_REQUESTED: 'type-requested',
+      LOAN_LIQUIDATED: 'type-liquidated',
+      USER_REGISTERED: 'type-registered',
+    };
+    return map[type] ?? '';
   }
 
-  truncateHash(hash: string): string {
-    return hash?.length > 14 ? `${hash.slice(0, 8)}...${hash.slice(-6)}` : hash;
-  }
-
-  buildTxLink(hash: string): string {
-    return `https://etherscan.io/tx/${hash}`;
+  timeAgo(timestamp: string): string {
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const minutes = Math.floor(diff / 60_000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
   }
 }

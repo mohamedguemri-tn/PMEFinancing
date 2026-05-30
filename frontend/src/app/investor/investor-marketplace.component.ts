@@ -29,6 +29,9 @@ interface MarketLoan {
   status: string;
   riskProfile: string;
   collateralValue: number;
+  hasGuarantor: boolean;
+  guarantorAssetName: string | null;
+  guarantorAssetValue: number | null;
 }
 
 @Component({
@@ -72,28 +75,46 @@ interface MarketLoan {
         ></app-empty-state>
 
         <div class="loan-grid" *ngIf="filteredLoans.length > 0">
-        <mat-card class="loan-card" *ngFor="let loan of filteredLoans">
-          <div class="loan-top-row">
-            <div class="loan-title">{{ loan.smeName }}</div>
-            <div class="loan-badges">
-              <app-role-badge role="PME"></app-role-badge>
-              <app-status-badge [status]="loan.status"></app-status-badge>
+          <mat-card class="loan-card" *ngFor="let loan of filteredLoans">
+            <div class="loan-top-row">
+              <div class="loan-title">{{ loan.smeName }}</div>
+              <div class="loan-badges">
+                <span class="guaranteed-chip" *ngIf="loan.hasGuarantor">✓ Guaranteed</span>
+                <app-status-badge [status]="loan.status"></app-status-badge>
+              </div>
             </div>
-          </div>
-          <div class="loan-subtitle">{{ loan.assetName }} · {{ loan.collateralType }}</div>
-          <div class="loan-main-row">
-            <div>
-              <div class="loan-amount">{{ loan.requestedAmount | number:'1.2-2' }} ETH</div>
-              <div class="loan-duration">{{ loan.durationDays }} days</div>
+
+            <div class="loan-info">
+              <div class="info-row">
+                <span class="info-label">Asset</span>
+                <span>{{ loan.assetName }} ({{ loan.collateralType }})</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Asset value</span>
+                <span>{{ loan.collateralValue | number:'1.2-2' }} ETH</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Loan amount</span>
+                <div class="amount-ltv">
+                  <span class="loan-amount">{{ loan.requestedAmount | number:'1.2-2' }} ETH</span>
+                  <span class="ltv-badge" [ngClass]="getLtvClass(loan.loanToValue)">{{ loan.loanToValue | number:'1.0-0' }}% LTV</span>
+                </div>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Duration</span>
+                <span>{{ loan.durationDays }} days</span>
+              </div>
             </div>
-            <div class="ltv-badge" [ngClass]="getLtvClass(loan.loanToValue)">{{ loan.loanToValue | number:'1.0-0' }}% LTV</div>
-          </div>
-          <div class="loan-footer">
-            <div>Collateral value {{ loan.collateralValue | number:'1.2-2' }} ETH</div>
-            <button mat-flat-button color="primary" (click)="openFundDialog(loan)">Fund this loan</button>
-          </div>
-        </mat-card>
-      </div>
+
+            <div class="guarantor-detail" *ngIf="loan.hasGuarantor && loan.guarantorAssetName">
+              Backed by {{ loan.guarantorAssetName }} ({{ loan.guarantorAssetValue | number:'1.2-2' }} ETH)
+            </div>
+
+            <div class="loan-footer">
+              <button mat-flat-button color="primary" (click)="openFundDialog(loan)">Fund this loan</button>
+            </div>
+          </mat-card>
+        </div>
       <mat-paginator
         [length]="totalCount"
         [pageSize]="pageSize"
@@ -174,41 +195,59 @@ interface MarketLoan {
         gap: var(--space-2);
         flex-wrap: wrap;
         flex-shrink: 0;
-      }
-
-      .loan-subtitle {
-        color: var(--color-text-secondary);
-        font-size: var(--font-size-base);
-      }
-
-      .loan-main-row {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        gap: var(--space-3);
+      }
+
+      .guaranteed-chip {
+        display: inline-flex;
+        align-items: center;
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border: 0.5px solid var(--color-success);
+        padding: 2px var(--space-2);
+        border-radius: var(--radius-pill);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        white-space: nowrap;
+      }
+
+      .loan-info {
+        display: grid;
+        gap: var(--space-2);
         padding: var(--space-3) 0;
         border-top: 0.5px solid var(--color-border);
         border-bottom: 0.5px solid var(--color-border);
       }
 
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+        font-size: var(--font-size-base);
+      }
+
+      .info-label {
+        color: var(--color-text-secondary);
+        flex-shrink: 0;
+      }
+
+      .amount-ltv {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
       .loan-amount {
-        font-size: var(--font-size-lg);
         font-weight: var(--font-weight-medium);
         color: var(--color-primary);
       }
 
-      .loan-duration {
-        font-size: var(--font-size-base);
-        color: var(--color-text-muted);
-        margin-top: 2px;
-      }
-
       .ltv-badge {
-        padding: var(--space-1) var(--space-2);
+        padding: 2px var(--space-2);
         border-radius: var(--radius-pill);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
-        letter-spacing: 0.02em;
         flex-shrink: 0;
       }
 
@@ -216,13 +255,18 @@ interface MarketLoan {
       .ltv-amber { background: var(--color-warning-bg); color: var(--color-warning); }
       .ltv-red   { background: var(--color-danger-bg);  color: var(--color-danger);  }
 
+      .guarantor-detail {
+        font-size: var(--font-size-xs);
+        color: var(--color-success);
+        background: var(--color-success-bg);
+        border-radius: var(--radius-sm);
+        padding: 4px var(--space-2);
+      }
+
       .loan-footer {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
-        gap: var(--space-3);
-        font-size: var(--font-size-base);
-        color: var(--color-text-secondary);
       }
 
       @media (max-width: 920px) {

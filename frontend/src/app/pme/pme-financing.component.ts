@@ -85,6 +85,9 @@ interface LoanRequest {
                     {{ asset.name }} · {{ asset.estimatedValue | number:'1.2-2' }} ETH
                   </mat-option>
                 </mat-select>
+                <mat-error *ngIf="loanForm.controls['collateralAssetId'].hasError('required')">
+                  Please select a collateral asset
+                </mat-error>
               </mat-form-field>
             </mat-card>
 
@@ -97,7 +100,7 @@ interface LoanRequest {
                     Loan amount is required
                   </mat-error>
                   <mat-error *ngIf="loanForm.controls['loanAmount'].hasError('max')">
-                    Maximum loan is {{ maxLoanAmount | number:'1.2-2' }} ETH
+                    Loan amount cannot exceed asset value ({{ selectedCollateral?.estimatedValue | number:'1.2-2' }} ETH)
                   </mat-error>
                 </mat-form-field>
 
@@ -106,11 +109,14 @@ interface LoanRequest {
                   aria-label="Duration"
                   class="duration-toggle"
                 >
-                  <mat-button-toggle value="30">30</mat-button-toggle>
-                  <mat-button-toggle value="60">60</mat-button-toggle>
-                  <mat-button-toggle value="90">90</mat-button-toggle>
-                  <mat-button-toggle value="180">180</mat-button-toggle>
+                  <mat-button-toggle [value]="30">30</mat-button-toggle>
+                  <mat-button-toggle [value]="60">60</mat-button-toggle>
+                  <mat-button-toggle [value]="90">90</mat-button-toggle>
+                  <mat-button-toggle [value]="180">180</mat-button-toggle>
                 </mat-button-toggle-group>
+                <div class="form-error" *ngIf="loanForm.controls['duration'].hasError('min') || loanForm.controls['duration'].hasError('max')">
+                  Duration must be between 7 and 365 days
+                </div>
             </mat-card>
           </form>
 
@@ -119,8 +125,9 @@ interface LoanRequest {
               <div class="summary-row"><span>Loan amount</span><span>{{ (loanForm.value.loanAmount || 0) | number:'1.2-2' }} ETH</span></div>
               <div class="summary-row"><span>Collateral</span><span>{{ selectedCollateral?.name || '—' }}</span></div>
               <div class="summary-row"><span>Duration</span><span>{{ loanForm.value.duration }} days</span></div>
-              <div class="summary-row"><span>Estimated interest</span><span>{{ estimatedInterest | number:'1.2-2' }} ETH</span></div>
-              <button mat-raised-button color="primary" (click)="submitLoanRequest()" [disabled]="!loanForm.valid || !selectedCollateral">
+              <button mat-raised-button color="primary"
+                [disabled]="!isFormValid() || txState !== 'idle'"
+                (click)="submitLoanRequest()">
                 Submit request
               </button>
               <app-tx-feedback [state]="txState" [message]="txMessage"></app-tx-feedback>
@@ -248,6 +255,12 @@ interface LoanRequest {
 
       .loan-requests-table,
       .requests-table { width: 100%; }
+
+      .form-error {
+        font-size: var(--font-size-sm);
+        color: var(--color-danger);
+        margin-top: var(--space-1);
+      }
     `,
   ],
 })
@@ -275,8 +288,8 @@ export class PmeFinancingComponent implements OnInit {
   constructor() {
     this.loanForm = this.fb.group({
       collateralAssetId: ['', Validators.required],
-      loanAmount: [0, [Validators.required, Validators.min(0.1)]],
-      duration: [30, Validators.required],
+      loanAmount: [0, [Validators.required, Validators.min(0.01)]],
+      duration: [30, [Validators.required, Validators.min(7), Validators.max(365)]],
     });
   }
 
@@ -301,12 +314,18 @@ export class PmeFinancingComponent implements OnInit {
   }
 
   get maxLoanAmount(): number {
-    return this.selectedCollateral ? this.selectedCollateral.estimatedValue * 0.8 : 0;
+    return this.selectedCollateral?.estimatedValue ?? 0;
   }
 
-  get estimatedInterest(): number {
-    const amount = Number(this.loanForm.value.loanAmount || 0);
-    return amount * 0.08;
+  isFormValid(): boolean {
+    const amount = this.loanForm.value.loanAmount;
+    const duration = this.loanForm.value.duration;
+    const asset = this.selectedCollateral;
+    return asset != null &&
+      amount > 0 &&
+      amount <= asset.estimatedValue &&
+      duration >= 7 &&
+      duration <= 365;
   }
 
   get loanColumns(): string[] {

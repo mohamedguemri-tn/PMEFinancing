@@ -1,5 +1,6 @@
 using Application.Loans.Commands;
 using Application.Loans.Queries;
+using Application.Common.Exceptions;
 using Domain.Entities;
 using Infrastructure.Persistence;
 using MediatR;
@@ -85,6 +86,86 @@ public class LoansController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id}/liquidate")]
+    [Authorize(Roles = "INVESTOR")]
+    public async Task<IActionResult> LiquidateLoan(Guid id, LiquidateLoanCommand command)
+    {
+        command.Id = id;
+        try
+        {
+            await _mediator.Send(command);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status404NotFound, Detail = ex.Message });
+        }
+        catch (ForbiddenActionException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
+    }
+
+    [HttpGet("guaranteed")]
+    public async Task<IActionResult> GetGuaranteedLoans(
+        [FromQuery] string guarantorWallet,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _mediator.Send(new GetGuarantorLoansQuery
+        {
+            GuarantorWallet = guarantorWallet,
+            Page = page,
+            PageSize = pageSize,
+        });
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/back")]
+    [Authorize(Roles = "GUARANTOR")]
+    public async Task<IActionResult> BackLoan(Guid id, BackLoanCommand command)
+    {
+        command.LoanId = id;
+        command.GuarantorWallet = User.FindFirst("wallet")?.Value ?? string.Empty;
+        try
+        {
+            await _mediator.Send(command);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status404NotFound, Detail = ex.Message });
+        }
+        catch (ForbiddenActionException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/withdraw-guarantee")]
+    [Authorize(Roles = "GUARANTOR")]
+    public async Task<IActionResult> WithdrawGuarantee(Guid id)
+    {
+        var command = new WithdrawGuaranteeCommand
+        {
+            LoanId = id,
+            GuarantorWallet = User.FindFirst("wallet")?.Value ?? string.Empty,
+        };
+        try
+        {
+            await _mediator.Send(command);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status404NotFound, Detail = ex.Message });
+        }
+        catch (ForbiddenActionException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
+    }
+
     [HttpGet("portfolio")]
     public async Task<IActionResult> GetPortfolio()
     {
@@ -109,7 +190,9 @@ public class LoansController : ControllerBase
                 smeName = l.Pme.PmeProfile != null ? l.Pme.PmeProfile.CompanyName : l.Pme.WalletAddress,
                 amount = l.RequestedAmount,
                 date = l.FundedAt.HasValue ? l.FundedAt.Value.ToString("MMM d, yyyy") : l.CreatedAt.ToString("MMM d, yyyy"),
-                status = l.Status.ToString()
+                status = l.Status.ToString(),
+                dueDate = l.DueDate,
+                onChainLoanId = l.OnChainLoanId,
             })
             .ToListAsync();
 

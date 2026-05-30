@@ -26,4 +26,11 @@ public class LoanDto
     public string Status { get; set; } = string.Empty;
     public string RiskProfile { get; set; } = string.Empty;
     public long? OnChainLoanId { get; set; }
+    public DateTime? DueDate { get; set; }
+    public bool IsOverdue => DueDate.HasValue && DueDate.Value < DateTime.UtcNow && Status == "FUNDED";
+    public Guid? GuarantorId { get; init; }
+    public string? GuarantorWallet { get; init; }
+    public string? GuarantorAssetName { get; init; }
+    public decimal? GuarantorAssetValue { get; init; }
+    public bool HasGuarantor => GuarantorId.HasValue;
 }

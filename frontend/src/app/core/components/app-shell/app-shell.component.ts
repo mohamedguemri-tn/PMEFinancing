@@ -7,10 +7,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatMenuModule } from '@angular/material/menu';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { filter, map, Subscription } from 'rxjs';
+import { filter, map, Observable, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { WalletService } from '../../services/wallet.service';
+import { NotificationService, AppNotification } from '../../services/notification.service';
 import { SharedModule } from '../../../shared/shared.module';
 
 interface NavItem {
@@ -32,6 +35,8 @@ interface NavItem {
     MatButtonModule,
     MatChipsModule,
     MatDividerModule,
+    MatBadgeModule,
+    MatMenuModule,
     SharedModule
   ],
   templateUrl: './app-shell.component.html',
@@ -45,16 +50,20 @@ export class AppShellComponent implements OnInit, OnDestroy {
   pageTitle = '';
   navItems: NavItem[] = [];
   ethBalance = '—';
+  notifications$: Observable<AppNotification[]>;
   private subscription = new Subscription();
   private balanceInterval?: ReturnType<typeof setInterval>;
 
   constructor(
     private authService: AuthService,
     private walletService: WalletService,
+    public notificationService: NotificationService,
     private router: Router,
     private route: ActivatedRoute,
-    private breakpointObserver: BreakpointObserver
-  ) {}
+    private breakpointObserver: BreakpointObserver,
+  ) {
+    this.notifications$ = this.notificationService.notifications$;
+  }
 
   ngOnInit(): void {
     // Observe screen size
@@ -69,7 +78,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Get current user, set navigation, and load balance
+    // Get current user, set navigation, load balance, and reconnect SignalR after page reload.
     this.subscription.add(
       this.currentUser$.subscribe(user => {
         if (user) {
@@ -77,6 +86,10 @@ export class AppShellComponent implements OnInit, OnDestroy {
           this.refreshBalance(user.walletAddress);
           clearInterval(this.balanceInterval);
           this.balanceInterval = setInterval(() => this.refreshBalance(user.walletAddress), 30000);
+          const token = this.authService.getToken();
+          if (token) {
+            this.notificationService.startConnection(token);
+          }
         }
       })
     );
@@ -107,6 +120,23 @@ export class AppShellComponent implements OnInit, OnDestroy {
     this.authService.logout().subscribe();
   }
 
+  markAllRead(): void {
+    this.notificationService.markAllAsRead();
+  }
+
+  getNotifIcon(type: string): string {
+    const icons: Record<string, string> = {
+      LOAN_FUNDED: 'payments',
+      LOAN_REPAID: 'check_circle',
+      LOAN_BACKED: 'shield',
+      GUARANTEE_WITHDRAWN: 'shield',
+      ACCOUNT_APPROVED: 'verified_user',
+      NEW_LOAN_REQUEST: 'request_quote',
+      LOAN_OVERDUE: 'warning',
+    };
+    return icons[type] ?? 'notifications';
+  }
+
   private setNavigationForRole(role: string): void {
     const baseItems: NavItem[] = [
       { label: 'Dashboard', icon: 'dashboard', route: `/${role.toLowerCase()}/dashboard` }
@@ -129,12 +159,15 @@ export class AppShellComponent implements OnInit, OnDestroy {
         break;
       case 'GUARANTOR':
         roleItems = [
-          { label: 'My guarantees', icon: 'verified_user', route: '/guarantor/guarantees' },
+          { label: 'My assets', icon: 'inventory_2', route: '/guarantor/assets' },
+          { label: 'Loan marketplace', icon: 'search', route: '/guarantor/marketplace' },
+          { label: 'Backed loans', icon: 'verified_user', route: '/guarantor/backed-loans' },
         ];
         break;
       case 'GOVERNOR':
         roleItems = [
           { label: 'Registrations', icon: 'group', route: '/governor/registrations', badge: 5 },
+          { label: 'Overdue loans', icon: 'warning', route: '/governor/overdue-loans' },
           { label: 'Access rights', icon: 'key', route: '/governor/access' },
           { label: 'Parameters', icon: 'tune', route: '/governor/parameters' },
           { label: 'Audit log', icon: 'list_alt', route: '/governor/audit' }

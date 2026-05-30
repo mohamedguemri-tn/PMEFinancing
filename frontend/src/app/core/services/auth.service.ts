@@ -5,6 +5,7 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { CurrentUser } from '../../auth/auth.models';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +15,11 @@ export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<CurrentUser | null>(this.loadUserFromToken());
   public readonly currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private notificationService: NotificationService,
+  ) {}
 
   public get currentUser(): CurrentUser | null {
     return this.currentUserSubject.value;
@@ -62,7 +67,10 @@ export class AuthService {
     return this.http
       .post<{ token: string }>(`${environment.apiUrl}/auth/login`, { walletAddress, signature })
       .pipe(
-        tap((response) => this.storeToken(response.token)),
+        tap((response) => {
+          this.storeToken(response.token);
+          this.notificationService.startConnection(response.token);
+        }),
         map((response) => {
           const user = this.decodeUserFromToken(response.token);
           if (!user) {
@@ -94,6 +102,8 @@ export class AuthService {
   }
 
   private clearAuth(): void {
+    this.notificationService.stopConnection();
+    this.notificationService.clearAll();
     localStorage.removeItem(this.tokenKey);
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);

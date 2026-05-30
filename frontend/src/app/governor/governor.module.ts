@@ -7,6 +7,7 @@ import { GovernorRegistrationsComponent } from './governor-registrations.compone
 import { GovernorAccessComponent } from './governor-access.component';
 import { GovernorParametersComponent } from './governor-parameters.component';
 import { GovernorAuditComponent } from './governor-audit.component';
+import { GovernorOverdueLoansComponent } from './governor-overdue-loans.component';
 
 const routes: Routes = [
   {
@@ -16,6 +17,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: GovernorDashboardComponent, data: { title: 'Dashboard' } },
       { path: 'registrations', component: GovernorRegistrationsComponent, data: { title: 'Registration requests' } },
+      { path: 'overdue-loans', component: GovernorOverdueLoansComponent, data: { title: 'Overdue loans' } },
       { path: 'access', component: GovernorAccessComponent, data: { title: 'Access rights' } },
       { path: 'parameters', component: GovernorParametersComponent, data: { title: 'Platform parameters' } },
       { path: 'audit', component: GovernorAuditComponent, data: { title: 'Audit log' } },
@@ -30,6 +32,7 @@ const routes: Routes = [
     AppShellComponent,
     GovernorDashboardComponent,
     GovernorRegistrationsComponent,
+    GovernorOverdueLoansComponent,
     GovernorAccessComponent,
     GovernorParametersComponent,
     GovernorAuditComponent,

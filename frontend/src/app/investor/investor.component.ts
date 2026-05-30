@@ -255,21 +255,15 @@ export class InvestorComponent implements OnInit {
         this.recentActivity = activities.slice(0, 5);
         const counts: Record<string, number> = { FUNDED: 0, REPAID: 0, DEFAULTED: 0 };
         let totalInvested = 0;
-        let totalReturn = 0;
-        let returnCount = 0;
 
         activities.forEach((activity) => {
           if (activity.status in counts) counts[activity.status]++;
           totalInvested += activity.amount;
-          if (activity.status === 'REPAID') {
-            totalReturn += activity.amount * 0.12;
-            returnCount++;
-          }
         });
 
         this.totalInvested = totalInvested;
         this.activeLoans = activities.filter((a) => a.status === 'FUNDED').length;
-        this.averageReturnRate = returnCount ? totalReturn / returnCount : 0;
+        this.averageReturnRate = 0;
         this.doughnutChartData.datasets[0].data = [counts['FUNDED'], counts['REPAID'], counts['DEFAULTED']];
       },
       error: () => { this.recentActivity = []; },

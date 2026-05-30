@@ -82,9 +82,37 @@
           <span class="wallet-pill-addr">{{ truncateAddress(user.walletAddress) }}</span>
         </div>
         <app-role-badge [role]="user.role"></app-role-badge>
-        <button mat-icon-button class="navbar-icon-btn" title="Notifications">
+        <button mat-icon-button class="navbar-icon-btn notif-bell" title="Notifications"
+          [matMenuTriggerFor]="notifMenu"
+          [matBadge]="notificationService.unreadCount || null"
+          matBadgeColor="warn"
+          matBadgeSize="small">
           <mat-icon>notifications</mat-icon>
         </button>
+
+        <mat-menu #notifMenu="matMenu" class="notification-menu">
+          <div class="notif-header" (click)="$event.stopPropagation()">
+            <span class="notif-title">Notifications</span>
+            <button mat-button class="notif-mark-read" (click)="markAllRead(); $event.stopPropagation()">
+              Mark all read
+            </button>
+          </div>
+          <div *ngIf="(notifications$ | async)?.length === 0"
+            class="notif-empty"
+            (click)="$event.stopPropagation()">
+            No notifications yet
+          </div>
+          <div *ngFor="let notif of (notifications$ | async)"
+            class="notif-item"
+            [class.notif-unread]="!notif.isRead"
+            (click)="$event.stopPropagation()">
+            <mat-icon class="notif-icon">{{ getNotifIcon(notif.type) }}</mat-icon>
+            <div class="notif-body">
+              <p class="notif-message">{{ notif.message }}</p>
+              <span class="notif-time">{{ notif.timestamp | date:'short' }}</span>
+            </div>
+          </div>
+        </mat-menu>
         <button mat-icon-button class="navbar-icon-btn" (click)="logout()" title="Sign out">
           <mat-icon>logout</mat-icon>
         </button>

@@ -17,7 +17,11 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
 
     public async Task<Guid> Handle(CreateAssetCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == request.PmeWallet, cancellationToken);
+        var user = await _context.Users.FirstOrDefaultAsync(
+            u => u.WalletAddress == request.PmeWallet &&
+                 (u.Role == Role.PME || u.Role == Role.GUARANTOR) &&
+                 u.IsApproved,
+            cancellationToken);
         if (user == null) throw new Exception("User not found");
 
         var asset = new Asset

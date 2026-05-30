@@ -1,4 +1,5 @@
 using Application.Common.Exceptions;
+using Application.Common.Interfaces;
 using Application.Loans.Commands;
 using Domain.Entities;
 using Infrastructure.Blockchain;
@@ -12,11 +13,16 @@ public class RequestLoanCommandHandler : IRequestHandler<RequestLoanCommand, Gui
 {
     private readonly AppDbContext _context;
     private readonly IBlockchainService _blockchainService;
+    private readonly INotificationService? _notificationService;
 
-    public RequestLoanCommandHandler(AppDbContext context, IBlockchainService blockchainService)
+    public RequestLoanCommandHandler(
+        AppDbContext context,
+        IBlockchainService blockchainService,
+        INotificationService? notificationService = null)
     {
         _context = context;
         _blockchainService = blockchainService;
+        _notificationService = notificationService;
     }
 
     public async Task<Guid> Handle(RequestLoanCommand request, CancellationToken cancellationToken)
@@ -42,6 +48,18 @@ public class RequestLoanCommandHandler : IRequestHandler<RequestLoanCommand, Gui
 
         _context.Loans.Add(loan);
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (_notificationService != null)
+        {
+            try
+            {
+                var message = $"New loan request: {asset.Name} — {loan.RequestedAmount} ETH";
+                await _notificationService.SendToRoleAsync("INVESTOR", "NEW_LOAN_REQUEST", message);
+                await _notificationService.SendToRoleAsync("GUARANTOR", "NEW_LOAN_REQUEST",
+                    $"New loan request available to back: {asset.Name} — {loan.RequestedAmount} ETH");
+            }
+            catch { /* notification failure must never break the main operation */ }
+        }
 
         return loan.Id;
     }

@@ -103,7 +103,55 @@ public class FundLoanCommandHandlerTests
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    // ── Test 5 — TransactionHash is accepted without error ───────────────────
+    // ── Test 5 — Fund an already-FUNDED loan is rejected ────────────────────
+
+    [Fact]
+    public async Task Handle_LoanStatusFunded_ThrowsForbiddenActionException()
+    {
+        using var ctx = TestDbContextFactory.Create();
+        var pme = new User { WalletAddress = "0xPME", Role = Role.PME };
+        var investor = new User { WalletAddress = "0xINV", Role = Role.INVESTOR };
+        var asset = new Asset { OwnerId = pme.Id, Name = "A", AssetType = "RE", EstimatedValue = 100, Status = AssetStatus.COLLATERAL };
+        ctx.Users.AddRange(pme, investor);
+        ctx.Assets.Add(asset);
+        await ctx.SaveChangesAsync();
+
+        var loan = new Loan { PmeId = pme.Id, CollateralAssetId = asset.Id, RequestedAmount = 5, DurationDays = 30, Status = LoanStatus.FUNDED };
+        ctx.Loans.Add(loan);
+        await ctx.SaveChangesAsync();
+
+        Func<Task> act = () => CreateHandler(ctx).Handle(
+            new FundLoanCommand { Id = loan.Id, InvestorWallet = "0xINV", AmountEth = 5 },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ForbiddenActionException>();
+    }
+
+    // ── Test 6 — Fund a REPAID loan is rejected ──────────────────────────────
+
+    [Fact]
+    public async Task Handle_LoanStatusRepaid_ThrowsForbiddenActionException()
+    {
+        using var ctx = TestDbContextFactory.Create();
+        var pme = new User { WalletAddress = "0xPME", Role = Role.PME };
+        var investor = new User { WalletAddress = "0xINV", Role = Role.INVESTOR };
+        var asset = new Asset { OwnerId = pme.Id, Name = "A", AssetType = "RE", EstimatedValue = 100, Status = AssetStatus.ATO };
+        ctx.Users.AddRange(pme, investor);
+        ctx.Assets.Add(asset);
+        await ctx.SaveChangesAsync();
+
+        var loan = new Loan { PmeId = pme.Id, CollateralAssetId = asset.Id, RequestedAmount = 5, DurationDays = 30, Status = LoanStatus.REPAID };
+        ctx.Loans.Add(loan);
+        await ctx.SaveChangesAsync();
+
+        Func<Task> act = () => CreateHandler(ctx).Handle(
+            new FundLoanCommand { Id = loan.Id, InvestorWallet = "0xINV", AmountEth = 5 },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<ForbiddenActionException>();
+    }
+
+    // ── Test 7 — TransactionHash is accepted without error ───────────────────
 
     [Fact]
     public async Task Handle_WithTransactionHash_Succeeds()

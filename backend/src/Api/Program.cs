@@ -4,7 +4,10 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Api;
 using Api.Authorization;
+using Api.Hubs;
 using Api.Middleware;
+using Api.Services;
+using Application.Common.Interfaces;
 using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
 using MediatR;
@@ -38,6 +41,8 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Application.Auth.Commands.GetNonceCommand).Assembly));
 
@@ -69,6 +74,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = key,
             ClockSkew = TimeSpan.FromMinutes(5)
         };
+        // SignalR WebSocket connections can't send custom headers — read JWT from query string.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -88,6 +107,14 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+    });
+    // AllowCredentials() required for SignalR — cannot combine with AllowAnyOrigin().
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -187,6 +214,7 @@ app.UseRateLimiter();
 app.UseMiddleware<Api.Authorization.BlocklistedTokenMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications").RequireCors("AllowFrontend");
 
 // Belt-and-suspenders: block /api/debug/* at the routing layer in non-Development.
 // The controller actions already return 404 via IsDev guards, but this stops

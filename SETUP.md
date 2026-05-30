@@ -184,8 +184,8 @@ dotnet run
 ```
 Starting database migration...
 Database migration completed.
-Governor seeded: 0xD42A9cD4638f15Af3F406d76b9c9B940C8437a66
-Demo PME seeded: 0x627306...
+Governor seeded: 0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D
+Demo PME seeded: 0xD44f328a3887ECa9ef921FA490792d95f99c8906
 Now listening on: http://localhost:5002
 ```
 
@@ -240,12 +240,12 @@ Work through this checklist in order. Each step depends on the previous.
 
 - [ ] **1. Register a PME**
   - Open `http://localhost:4200/register`
-  - Switch MetaMask to the PME account (`0x627306...`)
+  - Switch MetaMask to the PME account (`0xD44f328a3887ECa9ef921FA490792d95f99c8906`)
   - Fill in Company Name, Email, Sector — click Register
   - Sign the MetaMask popup (wallet ownership proof)
 
 - [ ] **2. Governor approves the PME**
-  - Switch MetaMask to Governor account (`0xD42A9c...`)
+  - Switch MetaMask to Governor account (`0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D`)
   - Login → Governor dashboard → Pending Users → click **Approve**
   - **Check backend logs:** look for `AssetToken.grantRole(PME) succeeded` — this confirms the on-chain PME role was granted at runtime.
   - **Note:** For the demo PME wallet, the migration already granted the PME role on-chain via `5_setup_roles.js`. Governor approval is still required for database-side approval so the PME can log in.
@@ -276,9 +276,30 @@ Work through this checklist in order. Each step depends on the previous.
   - Enter amount (in ETH) and duration (days) → Submit
 
 - [ ] **8. Investor funds the loan**
-  - Switch MetaMask to Investor account (`0xf17f52...`)
+  - Switch MetaMask to Investor account (`0xCe8Aff...be37A`)
   - Login → Investor dashboard → Marketplace
   - Find the loan → click **Fund**
+
+- [ ] **9. Test liquidation (optional)**
+  - To simulate an overdue loan, run:
+    ```bash
+    docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd \
+      -S localhost -U sa -P 'YourPassword123!' -N -C \
+      -Q "UPDATE SMEFinancing.dbo.Loans SET DueDate = DATEADD(day, -1, GETUTCDATE()) WHERE Status = 'FUNDED'"
+    ```
+  - Switch MetaMask to Investor account (`0xCe8AfFdBdbdc02151784037Dba132b6447Abe37A`)
+  - Login → **My Investments** tab
+  - Find the overdue loan (shows red **OVERDUE** badge)
+  - Click **Liquidate** → MetaMask pops up → confirm
+  - Verify asset status becomes `LIQUIDATED` in the DB:
+    ```bash
+    docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd \
+      -S localhost -U sa -P 'YourPassword123!' -N -C \
+      -Q "SELECT Name, Status FROM SMEFinancing.dbo.Assets WHERE Status = 'LIQUIDATED'"
+    ```
+  > **Note:** Liquidation must be triggered by the **Investor** (not the Governor). The smart contract
+  > `liquidateCollateral()` requires `onlyRole(INVESTOR)` and checks `msg.sender == loan.investor`.
+  > The Governor Overdue Loans page is a monitoring view only.
 
 ---
 

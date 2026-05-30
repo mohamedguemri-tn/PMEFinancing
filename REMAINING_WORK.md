@@ -124,10 +124,20 @@ Added `app.Map("/api/debug/{**path}", ...)` in `Program.cs` that returns 404 for
 **Files:** `backend/src/Domain/Entities/Loan.cs`, `backend/src/Application/Loans/Handlers/RepayLoanCommandHandler.cs`.
 **Rationale:** Full repayment-in-one-shot was chosen to keep the MVP simple. The LoanManager smart contract also does not support partial repayment.
 
-### 4.3 — No loan default / liquidation flow in the UI
-**What:** `AssetToken.sol` has a `LIQUIDATED` status enum value, and the smart contract supports collateral liquidation in principle. However, no backend handler, no endpoint, and no UI page exists for triggering or processing liquidation when a loan goes past its duration.
-**Files:** `backend/src/Domain/Entities/Asset.cs` (`AssetStatus.LIQUIDATED` exists), `contracts/contracts/AssetToken.sol` (Status enum).
-**Rationale:** Liquidation requires a time-oracle or manual Governor trigger. Deferred pending legal review of what constitutes default in the target jurisdiction.
+### ~~4.3 — No loan default / liquidation flow in the UI~~ **FIXED**
+Full liquidation flow implemented end-to-end:
+- `Loan.DueDate` + `Loan.LiquidatedAt` added to domain entity; EF migration `AddLoanDueDateAndLiquidatedAt` applied.
+- `FundLoanCommandHandler` now calculates and saves `DueDate = FundedAt + DurationDays`.
+- `LiquidateLoanCommand` + `LiquidateLoanCommandHandler`: guards loan exists, FUNDED, and overdue; sets `Status = LIQUIDATED`, `LiquidatedAt`, and `Asset.Status = LIQUIDATED`.
+- `LoanStatus.LIQUIDATED` added to domain enum.
+- `GET /api/admin/loans/overdue` (GOVERNOR): returns all FUNDED loans past DueDate with PME name, asset, amount, days overdue, investor wallet.
+- `POST /api/loans/{id}/liquidate` (INVESTOR): records DB liquidation after investor's on-chain `liquidateCollateral()` call.
+- `LoanDto.DueDate` + computed `IsOverdue` field added and mapped in `GetRequestedLoansQueryHandler`.
+- `GET /api/loans/portfolio` now returns `dueDate` + `onChainLoanId` so investor frontend can detect overdue status.
+- Frontend Governor: new **Overdue Loans** page (`/governor/overdue-loans`) shows monitoring table; nav item added.
+- Frontend Investor: **My investments** tab shows red OVERDUE badge and Liquidate button for overdue FUNDED loans; Liquidate calls `LoanManager.liquidateCollateral()` via investor's MetaMask, then POSTs txHash to backend.
+- 5 new unit tests: happy path, not found, not funded, not overdue, LiquidatedAt set. Total: **28 passing**.
+- **Smart contract constraint:** `liquidateCollateral()` requires `onlyRole(INVESTOR)` AND `msg.sender == loan.investor`. The Governor cannot trigger on-chain liquidation; the Investor must. Governor page is monitoring only.
 
 ### 4.4 — Single-asset collateral only
 **What:** Each loan can have exactly one collateral asset (`CollateralAssetId` is a single foreign key on `Loan`). Multi-asset collateral is not supported.
