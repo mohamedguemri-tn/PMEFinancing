@@ -1,3 +1,23 @@
+# BlockFin PME
+
+[![CI](https://github.com/mohamedguemri-tn/PMEFinancing/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamedguemri-tn/PMEFinancing/actions/workflows/ci.yml)
+
+A blockchain-based participatory financing platform for SMEs.
+Built with Angular 17, ASP.NET Core 8, Solidity, and Ganache.
+
+## Quick Start
+```bash
+cp .env.example .env
+# Add your Ganache accounts[0] private key to .env
+docker compose up
+```
+Open http://localhost:4200
+
+## Documentation
+- [Setup Guide](SETUP.md)
+
+---
+
 # BlockFin PME — SME Financing Platform
 
 A blockchain-based financing platform for Small and Medium Enterprises (SMEs). Users authenticate with their Ethereum wallet (MetaMask) — no passwords. The backend issues JWT tokens after verifying a signed nonce; smart contracts handle on-chain role registration and asset tokenization.

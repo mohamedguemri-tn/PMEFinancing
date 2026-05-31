@@ -36,6 +36,20 @@ docker-compose up --build
 
 ---
 
+## GitHub Actions CI
+
+Every push to any branch automatically:
+- Builds the backend and runs all 39 unit tests
+- Builds the frontend production bundle
+- Compiles the Solidity contracts
+
+View results at: https://github.com/mohamedguemri-tn/PMEFinancing/actions
+
+No secrets needed — the CI does not run blockchain transactions.
+The `GOVERNOR_PRIVATE_KEY` is only needed locally (see Section 5).
+
+---
+
 ## Section 1 — Prerequisites
 
 Install every tool before continuing. All commands are Linux/Debian; adjust for your OS.
