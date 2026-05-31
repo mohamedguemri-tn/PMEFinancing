@@ -363,7 +363,6 @@ publish/
 deployment.log
 
 # Docker (if applicable)
-.dockerignore
 docker-compose.override.yml
 
 # Kubernetes (if applicable)

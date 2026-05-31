@@ -1,0 +1,75 @@
+services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourPassword123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost",
+             "-U", "sa", "-P", "YourPassword123!", "-N", "-C", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  ganache:
+    build:
+      context: ./contracts
+      dockerfile: Dockerfile
+    ports:
+      - "8545:8545"
+    volumes:
+      - contract_addresses:/shared
+    # Healthy when contract addresses have been written (migration complete)
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /shared/contract-addresses.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=SMEFinancing;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True
+      - ContractConfig__RpcUrl=http://ganache:8545
+      - ContractConfig__GovernorPrivateKey=${GOVERNOR_PRIVATE_KEY}
+      - ContractConfig__GovernorAddress=0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D
+      - CONTRACT_ADDRESSES_PATH=/shared/contract-addresses.json
+    volumes:
+      - contract_addresses:/shared
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      ganache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  sqlserver_data:
+  contract_addresses:

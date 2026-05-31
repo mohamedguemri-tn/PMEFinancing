@@ -12,7 +12,6 @@ contract FinancingToken is ERC20, ERC20Burnable, Ownable {
     uint256 initialSupply
 )
     ERC20(name, symbol)
-    Ownable(msg.sender) // 🔥 REQUIRED
 {
     _mint(msg.sender, initialSupply * 10 ** decimals());
 }

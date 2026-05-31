@@ -1,0 +1,3 @@
+# Enforce Unix line endings for all shell scripts
+*.sh text eol=lf
+contracts/docker-entrypoint.sh text eol=lf

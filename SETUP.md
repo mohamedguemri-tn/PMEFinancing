@@ -5,6 +5,37 @@
 
 ---
 
+## Docker Compose (recommended for demo/deployment)
+
+Runs everything in containers with one command. No local Node.js, .NET, or Ganache required.
+
+```bash
+cp .env.example .env
+# .env already contains the correct Governor private key for the candy-maple mnemonic
+
+docker-compose up --build
+```
+
+Services start in this order: **SQL Server → Ganache (deploys contracts) → Backend → Frontend**
+
+Open `http://localhost:4200` when all four services are healthy (~3–5 minutes on first build).
+
+To stop:
+```bash
+docker-compose down
+```
+
+To wipe all data and start completely fresh:
+```bash
+docker-compose down -v
+docker-compose up --build
+```
+
+> **MetaMask note:** Point MetaMask at `http://localhost:8545`, Chain ID `1337`.
+> The Ganache container uses the same candy-maple mnemonic as local dev, so imported accounts are identical.
+
+---
+
 ## Section 1 — Prerequisites
 
 Install every tool before continuing. All commands are Linux/Debian; adjust for your OS.

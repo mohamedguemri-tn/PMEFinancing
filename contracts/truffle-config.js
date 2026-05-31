@@ -4,7 +4,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 module.exports = {
   networks: {
     development: {
-      host: "127.0.0.1",
+      host: "0.0.0.0",  // 0.0.0.0 so Ganache binds all interfaces inside Docker
       port: 8545,
       network_id: "*",
       gas: 6721975,

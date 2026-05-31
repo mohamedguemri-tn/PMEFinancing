@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 using Api;
 using Api.Authorization;
@@ -18,6 +19,22 @@ using Serilog;
 using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// When running in Docker, Ganache writes deployed contract addresses to a shared volume.
+// Inject them into configuration before ContractConfig is bound to services.
+var contractAddressesPath = Environment.GetEnvironmentVariable("CONTRACT_ADDRESSES_PATH");
+if (!string.IsNullOrEmpty(contractAddressesPath) && File.Exists(contractAddressesPath))
+{
+    var json = await File.ReadAllTextAsync(contractAddressesPath);
+    var addresses = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+    if (addresses != null)
+    {
+        foreach (var (contractKey, contractValue) in addresses)
+{
+    builder.Configuration[$"ContractConfig:{contractKey}"] = contractValue;
+}
+    }
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
