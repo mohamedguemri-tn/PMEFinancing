@@ -328,6 +328,7 @@ contracts/node_modules/
 contracts/.truffle-assertions-queue
 contracts/deployments/
 contracts/**/.env
+!contracts/migrations/
 
 # ============================================================
 # TEMPORARY & CACHE FILES
@@ -395,6 +396,7 @@ contracts/package-lock.json
 !.gitattributes
 !.github/
 !.vscode/extensions.json
+!.env.example
 
 # Backup files
 *.bak

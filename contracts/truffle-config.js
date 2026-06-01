@@ -12,12 +12,13 @@ module.exports = {
     },
     sepolia: {
       provider: () => new HDWalletProvider(
-        process.env.MNEMONIC,
-        `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`
+        process.env.GOVERNOR_PRIVATE_KEY.replace(/^0x/, ''),
+        process.env.SEPOLIA_RPC_URL
       ),
       network_id: 11155111,
-      gasPrice: 20000000000,
-      confirmations: 5,
+      gas: 5500000,
+      gasPrice: 3000000000,
+      confirmations: 0,
       timeoutBlocks: 200,
       skipDryRun: true
     }

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BrowserProvider, formatEther, parseEther } from 'ethers';
+import { environment } from '../../../environments/environment';
 
 declare global {
   interface Window {
@@ -16,7 +17,7 @@ export class WalletService {
       throw new Error('MetaMask is not installed.');
     }
 
-    await this.ensureGanacheNetwork();
+    await this.ensureCorrectNetwork();
 
     const accounts = await window.ethereum!.request({
       method: 'eth_requestAccounts',
@@ -29,27 +30,33 @@ export class WalletService {
     return String(accounts[0]).toLowerCase();
   }
 
-  private async ensureGanacheNetwork(): Promise<void> {
-    const GANACHE_CHAIN_ID = '0x539'; // 1337
+  private async ensureCorrectNetwork(): Promise<void> {
+    const chainId = environment.chainId;
+    const chainIdHex = '0x' + chainId.toString(16);
+
+    const isGanache = chainId === 1337;
+    const networkName = isGanache ? 'Ganache Local' : 'Sepolia Testnet';
+    const rpcUrl = environment.rpcUrl;
+
     try {
       await window.ethereum!.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: GANACHE_CHAIN_ID }],
+        params: [{ chainId: chainIdHex }],
       });
     } catch (err: any) {
       if (err?.code === 4902) {
-        // Network not added yet — add it and switch
+        // Network not in MetaMask yet — add it and switch
         await window.ethereum!.request({
           method: 'wallet_addEthereumChain',
           params: [{
-            chainId: GANACHE_CHAIN_ID,
-            chainName: 'Ganache Local',
-            rpcUrls: ['http://127.0.0.1:8545'],
+            chainId: chainIdHex,
+            chainName: networkName,
+            rpcUrls: [rpcUrl],
             nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
           }],
         });
       }
-      // If another error (e.g. user rejected), let it propagate
+      // If user rejected or another error, let it propagate
     }
   }
 

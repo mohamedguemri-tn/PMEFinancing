@@ -36,6 +36,28 @@ docker-compose up --build
 
 ---
 
+## Sepolia Testnet Deployment
+
+The smart contracts are deployed on Sepolia testnet:
+
+| Contract | Address |
+|----------|---------|
+| RoleManager | `0xB0d34552D18F9e3eDfAd13cFC7Bbca85c6f9db6e` |
+| AssetToken | `0x2527f64a08BC3dC1d373fDf63e1a80a72B8a105D` |
+| LoanManager | `0xC795066E3ad49788640e1539B365036E40C4a3e6` |
+
+View on Etherscan:
+- [RoleManager](https://sepolia.etherscan.io/address/0xB0d34552D18F9e3eDfAd13cFC7Bbca85c6f9db6e)
+- [AssetToken](https://sepolia.etherscan.io/address/0x2527f64a08BC3dC1d373fDf63e1a80a72B8a105D)
+- [LoanManager](https://sepolia.etherscan.io/address/0xC795066E3ad49788640e1539B365036E40C4a3e6)
+
+To use the production deployment:
+1. Switch MetaMask to **Sepolia** network (Chain ID: 11155111)
+2. Get free SepoliaETH from https://cloud.google.com/application/web3/faucet/ethereum/sepolia
+3. Use the app normally — all transactions go to Sepolia
+
+---
+
 ## GitHub Actions CI
 
 Every push to any branch automatically:

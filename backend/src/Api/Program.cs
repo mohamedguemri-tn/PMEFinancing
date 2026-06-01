@@ -112,7 +112,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-builder.Services.Configure<ContractConfig>(builder.Configuration.GetSection("ContractConfig"));
+var contractConfigSection = builder.Environment.IsProduction() ? "SepoliaConfig" : "ContractConfig";
+builder.Services.Configure<ContractConfig>(builder.Configuration.GetSection(contractConfigSection));
 builder.Services.AddScoped<IBlockchainService, BlockchainService>();
 builder.Services.AddScoped<DatabaseSeeder>();
 builder.Services.AddScoped<TestDataSeeder>();
