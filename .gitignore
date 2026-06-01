@@ -306,6 +306,9 @@ id_rsa.pub
 # PROJECT SPECIFIC
 # ============================================================
 
+# The [Dd]ebug/ rule above would swallow this source directory — exempt it.
+!frontend/src/app/core/debug/
+
 # Backend specific
 backend/src/**/bin/
 backend/src/**/obj/
