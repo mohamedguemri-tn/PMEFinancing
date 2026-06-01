@@ -5,6 +5,45 @@
 
 ---
 
+## Cloud Deployment (Vercel + Railway)
+
+The production app is deployed at:
+- **Frontend:** https://pme-financing.vercel.app *(replace with your Vercel URL)*
+- **Backend:** https://pme-financing.up.railway.app *(replace with your Railway URL)*
+
+### Backend — Railway
+
+1. Create a new project on [railway.app](https://railway.app) and connect the GitHub repo.
+2. Railway auto-detects `railway.json` and builds from `backend/Dockerfile`.
+3. Add these environment variables in the Railway dashboard:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | SQL Server connection string from your Railway SQL plugin |
+| `BLOCKFIN_GOVERNOR_PRIVATE_KEY` | Private key for the Sepolia Governor wallet (no `0x` prefix) |
+| `Jwt__Secret` | Your JWT secret (same as local `appsettings.json`) |
+| `Jwt__Issuer` | `SMEFinancing` |
+| `Jwt__Audience` | `SMEFinancing` |
+| `AllowedOrigins__0` | Your Vercel frontend URL (e.g. `https://pme-financing.vercel.app`) |
+
+Railway automatically injects a `PORT` variable — the Dockerfile reads it via `${PORT:-5002}`.
+
+### Frontend — Vercel
+
+1. Import the repo on [vercel.com](https://vercel.com).
+2. Vercel auto-detects `vercel.json` — no manual build settings needed.
+3. Add this environment variable in the Vercel dashboard:
+
+| Variable | Value |
+|----------|-------|
+| `RAILWAY_BACKEND_URL` | Your Railway backend URL (e.g. `https://pme-financing.up.railway.app`) |
+
+At build time, Vercel's `buildCommand` in `vercel.json` runs `sed` to replace `RAILWAY_BACKEND_URL_PLACEHOLDER` in `environment.production.ts` with the actual URL before the Angular build runs.
+
+> **Note:** The smart contracts are already deployed on Sepolia testnet (see addresses in `SETUP.md` Section — Sepolia). No re-deployment is needed for the cloud setup.
+
+---
+
 ## Docker Compose (recommended for demo/deployment)
 
 Runs everything in containers with one command. No local Node.js, .NET, or Ganache required.

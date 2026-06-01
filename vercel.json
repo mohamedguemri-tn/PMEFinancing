@@ -1,0 +1,5 @@
+{
+  "buildCommand": "sed -i \"s|RAILWAY_BACKEND_URL_PLACEHOLDER|$RAILWAY_BACKEND_URL|g\" frontend/src/environments/environment.production.ts && cd frontend && npm install && npm run build -- --configuration production",
+  "outputDirectory": "frontend/dist/sme-financing-frontend",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
