@@ -13,6 +13,7 @@ namespace Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/loans")]
+[Tags("Loans")]
 public class LoansController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -24,6 +25,7 @@ public class LoansController : ControllerBase
         _context = context;
     }
 
+    /// <summary>Get paginated loan requests. Optionally filter by PME wallet to show all statuses for that PME.</summary>
     [HttpGet]
     public async Task<IActionResult> GetRequestedLoans(
         [FromQuery] string? pmeWallet,
@@ -39,6 +41,7 @@ public class LoansController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Get the active funded loan for a PME wallet (status FUNDED).</summary>
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveLoan([FromQuery] string pmeWallet)
     {
@@ -60,6 +63,7 @@ public class LoansController : ControllerBase
         return Ok(loan);
     }
 
+    /// <summary>Request a loan using a tokenized asset as collateral. MetaMask must call LoanManager.requestLoan() first.</summary>
     [HttpPost]
     public async Task<IActionResult> RequestLoan(RequestLoanCommand command)
     {
@@ -68,6 +72,7 @@ public class LoansController : ControllerBase
         return CreatedAtAction(nameof(GetRequestedLoans), new { id }, new { id });
     }
 
+    /// <summary>Record a completed on-chain loan funding. MetaMask must call LoanManager.fundLoan() first.</summary>
     [HttpPost("{id}/fund")]
     public async Task<IActionResult> FundLoan(Guid id, FundLoanCommand command)
     {
@@ -77,6 +82,7 @@ public class LoansController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Record a completed on-chain loan repayment. MetaMask must call LoanManager.repayLoan() first.</summary>
     [HttpPost("{id}/repay")]
     public async Task<IActionResult> RepayLoan(Guid id, RepayLoanCommand command)
     {
@@ -86,6 +92,8 @@ public class LoansController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Record a completed on-chain collateral liquidation. MetaMask must call LoanManager.liquidateCollateral() first.</summary>
+    /// <remarks>Only the Investor who funded the loan can liquidate. Loan must be overdue (past DueDate).</remarks>
     [HttpPost("{id}/liquidate")]
     [Authorize(Roles = "INVESTOR")]
     public async Task<IActionResult> LiquidateLoan(Guid id, LiquidateLoanCommand command)
@@ -106,6 +114,7 @@ public class LoansController : ControllerBase
         }
     }
 
+    /// <summary>Get loans backed by the calling Guarantor.</summary>
     [HttpGet("guaranteed")]
     public async Task<IActionResult> GetGuaranteedLoans(
         [FromQuery] string guarantorWallet,
@@ -121,6 +130,7 @@ public class LoansController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Back a loan as Guarantor by offering one of your registered assets as additional collateral.</summary>
     [HttpPost("{id}/back")]
     [Authorize(Roles = "GUARANTOR")]
     public async Task<IActionResult> BackLoan(Guid id, BackLoanCommand command)
@@ -142,6 +152,7 @@ public class LoansController : ControllerBase
         }
     }
 
+    /// <summary>Withdraw a guarantee from a loan. Only possible while loan is still REQUESTED.</summary>
     [HttpPost("{id}/withdraw-guarantee")]
     [Authorize(Roles = "GUARANTOR")]
     public async Task<IActionResult> WithdrawGuarantee(Guid id)
@@ -166,6 +177,7 @@ public class LoansController : ControllerBase
         }
     }
 
+    /// <summary>Get the investor's funded loan portfolio.</summary>
     [HttpGet("portfolio")]
     public async Task<IActionResult> GetPortfolio()
     {

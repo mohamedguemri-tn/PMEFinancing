@@ -11,6 +11,7 @@ namespace Api.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/assets")]
+[Tags("Assets")]
 public class AssetsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,6 +23,7 @@ public class AssetsController : ControllerBase
         _context = context;
     }
 
+    /// <summary>Get paginated list of assets owned by a PME or Guarantor wallet.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAssets(
         [FromQuery] string pmeWallet,
@@ -37,6 +39,8 @@ public class AssetsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Create a new asset for a PME or Guarantor.</summary>
+    /// <remarks>The wallet address is read from the JWT — do not pass pmeWallet in the body.</remarks>
     [HttpPost]
     public async Task<IActionResult> CreateAsset(CreateAssetCommand command)
     {
@@ -45,6 +49,7 @@ public class AssetsController : ControllerBase
         return CreatedAtAction(nameof(GetAssets), new { id }, new { id });
     }
 
+    /// <summary>Update an existing asset. Only the asset owner can update.</summary>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateAsset(Guid id, UpdateAssetCommand command)
     {
@@ -65,6 +70,7 @@ public class AssetsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Delete an asset. Only the asset owner can delete.</summary>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAsset(Guid id)
     {
@@ -85,6 +91,12 @@ public class AssetsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Record a completed on-chain tokenization. MetaMask must call AssetToken.mint() first.</summary>
+    /// <remarks>
+    /// The frontend calls mint() via MetaMask, waits for the receipt, parses the AssetTokenized event
+    /// to get the tokenId, then calls this endpoint with { transactionHash, tokenId }.
+    /// The backend only records the result — it never calls the blockchain directly for this action.
+    /// </remarks>
     [HttpPost("{id}/tokenize")]
     public async Task<IActionResult> TokenizeAsset(Guid id, TokenizeAssetCommand command)
     {

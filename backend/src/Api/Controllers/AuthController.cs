@@ -10,6 +10,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[Tags("Authentication")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,6 +20,8 @@ public class AuthController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>Request a one-time nonce for wallet signature authentication.</summary>
+    /// <remarks>The nonce expires after 10 minutes. Rate limited to 5 requests per minute per IP.</remarks>
     [HttpPost("nonce")]
     [EnableRateLimiting(RateLimitPolicies.Nonce)]
     public async Task<IActionResult> GetNonce([FromBody] GetOrCreateNonceQuery query)
@@ -34,6 +37,8 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>Register a new user account (PME, Investor, or Guarantor).</summary>
+    /// <remarks>Account requires Governor approval before login is possible. Rate limited to 3 requests per 10 minutes per IP.</remarks>
     [HttpPost("register")]
     [EnableRateLimiting(RateLimitPolicies.Register)]
     public async Task<IActionResult> Register([FromBody] RegisterUserCommand command)
@@ -49,6 +54,12 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>Authenticate using a wallet signature and receive a JWT token.</summary>
+    /// <remarks>
+    /// Sign the nonce from /nonce with MetaMask (personal_sign), then submit the signature here.
+    /// Returns a 24-hour JWT token containing wallet, role, userId, and companyName claims.
+    /// Rate limited to 10 requests per minute per IP.
+    /// </remarks>
     [HttpPost("login")]
     [EnableRateLimiting(RateLimitPolicies.Login)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
@@ -72,6 +83,8 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>Logout and invalidate the current JWT token.</summary>
+    /// <remarks>Adds the token's JTI claim to the in-memory blocklist. Not rate limited.</remarks>
     [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
