@@ -19,7 +19,7 @@ COPY --from=build /app/publish .
 # curl is needed for the docker-compose healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 5002
+EXPOSE 8000
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-5002} dotnet Api.dll"]
+ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8000} dotnet Api.dll"]

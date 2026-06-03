@@ -111,9 +111,37 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Appli
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString)
-);
+// Detect PostgreSQL: connection strings starting with "Host=" or a postgres:// URI
+var usePostgres = connectionString != null &&
+    (connectionString.StartsWith("Host=", StringComparison.OrdinalIgnoreCase) ||
+     connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+     connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase));
+
+if (usePostgres)
+{
+    // Normalise a postgres:// URI to the key=value format Npgsql expects
+    if (connectionString!.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        var uri      = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':');
+        var port     = uri.Port > 0 ? uri.Port : 5432;
+        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+        connectionString =
+            $"Host={uri.Host};Port={port};" +
+            $"Database={uri.AbsolutePath.TrimStart('/')};" +
+            $"Username={userInfo[0]};Password={password};" +
+            "SSL Mode=Require;Trust Server Certificate=true";
+    }
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
 var contractConfigSection = builder.Environment.IsProduction() ? "SepoliaConfig" : "ContractConfig";
 builder.Services.Configure<ContractConfig>(builder.Configuration.GetSection(contractConfigSection));

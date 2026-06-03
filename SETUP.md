@@ -5,13 +5,57 @@
 
 ---
 
-## Cloud Deployment (Vercel + Railway)
+## Cloud Deployment (Vercel + Koyeb)
 
 The production app is deployed at:
-- **Frontend:** https://pme-financing.vercel.app *(replace with your Vercel URL)*
-- **Backend:** https://pme-financing.up.railway.app *(replace with your Railway URL)*
+- **Frontend:** https://pme-financing.vercel.app
+- **Backend:** https://blockfin-pme-api.koyeb.app *(replace with your Koyeb URL after first deploy)*
 
-### Backend — Railway
+### Backend — Koyeb (free tier, PostgreSQL)
+
+The backend supports **both SQL Server** (local Docker Compose) and **PostgreSQL** (cloud).
+Provider is auto-detected from the `DATABASE_URL` format:
+- `Host=…` or `postgres://…` → PostgreSQL (`EnsureCreated` schema init)
+- `Server=…` → SQL Server (`MigrateAsync` with incremental migrations)
+
+#### Steps
+
+1. Sign up at [koyeb.com](https://koyeb.com) with your GitHub account.
+2. **Create App** → GitHub → select `PMEFinancing` repo → branch `main`.
+3. Set build source to **Dockerfile** → path `backend/Dockerfile`, context `backend`.
+4. Set the exposed port to **8000**.
+5. Add a **PostgreSQL** database from the Koyeb addon panel — it generates a `DATABASE_URL`.
+6. Add these **secrets** in the Koyeb dashboard (never commit secrets to `koyeb.yaml`):
+
+| Secret | Value |
+|--------|-------|
+| `DATABASE_URL` | PostgreSQL connection string from Koyeb addon (auto-filled) |
+| `BLOCKFIN_GOVERNOR_PRIVATE_KEY` | `0x52c0f8b10c7aabd449a9e03ed2dac4f8cbadc023a8cd13a01eb9d8d46d00fdbc` |
+| `Jwt__Secret` | `SMEFinancingPlatformSuperSecretKey2026!!` |
+| `Jwt__Issuer` | `SMEFinancing` |
+| `Jwt__Audience` | `SMEFinancing` |
+| `GovernorWallet` | `0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D` |
+
+The non-secret variables (Sepolia RPC, contract addresses, CORS origin) are already in `koyeb.yaml`.
+
+#### Verify
+
+```bash
+curl https://<your-app>.koyeb.app/api/health
+# → {"status":"healthy","timestamp":"..."}
+```
+
+#### After deploy — update Vercel
+
+Go to Vercel dashboard → `pme-financing` → Settings → Environment Variables:
+
+| Variable | Value |
+|----------|-------|
+| `RAILWAY_BACKEND_URL` | `https://<your-app>.koyeb.app` |
+
+Then trigger a redeploy.
+
+### Backend — Railway (legacy, kept for reference)
 
 1. Create a new project on [railway.app](https://railway.app) and connect the GitHub repo.
 2. Railway auto-detects `railway.json` and builds from `backend/Dockerfile`.
@@ -26,7 +70,7 @@ The production app is deployed at:
 | `Jwt__Audience` | `SMEFinancing` |
 | `AllowedOrigins__0` | Your Vercel frontend URL (e.g. `https://pme-financing.vercel.app`) |
 
-Railway automatically injects a `PORT` variable — the Dockerfile reads it via `${PORT:-5002}`.
+Railway automatically injects a `PORT` variable — the Dockerfile reads it via `${PORT:-8000}`.
 
 ### Frontend — Vercel
 

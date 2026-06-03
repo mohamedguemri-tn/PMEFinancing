@@ -41,6 +41,7 @@ services:
       - "5002:5002"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - PORT=5002
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=SMEFinancing;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True
       - ContractConfig__RpcUrl=http://ganache:8545
       - ContractConfig__GovernorPrivateKey=${GOVERNOR_PRIVATE_KEY}

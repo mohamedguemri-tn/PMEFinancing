@@ -26,9 +26,17 @@ public class DatabaseSeeder
     /// </summary>
     public async Task SeedAsync()
     {
-        _logger.LogInformation("Starting database migration...");
-        await _context.Database.MigrateAsync();
-        _logger.LogInformation("Database migration completed.");
+        _logger.LogInformation("Starting database initialisation...");
+        // SQL Server: apply incremental migrations tracked in __EFMigrationsHistory.
+        // PostgreSQL: EnsureCreated creates the schema directly from the EF model using
+        // Npgsql's type mappings, because the existing migrations contain SQL Server-specific
+        // type annotations (uniqueidentifier, nvarchar, datetime2) that are incompatible.
+        var isPostgres = _context.Database.ProviderName?.Contains("Npgsql") == true;
+        if (isPostgres)
+            await _context.Database.EnsureCreatedAsync();
+        else
+            await _context.Database.MigrateAsync();
+        _logger.LogInformation("Database initialisation completed.");
 
         await SeedGovernorAsync();
         await SeedDemoUsersAsync();

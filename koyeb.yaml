@@ -1,0 +1,41 @@
+name: blockfin-pme
+services:
+  - name: api
+    type: web
+    git:
+      repository: github.com/mohamedguemri-tn/PMEFinancing
+      branch: main
+    docker:
+      dockerfile: backend/Dockerfile
+      context: backend
+    ports:
+      - port: 8000
+        protocol: http
+    routes:
+      - path: /
+        port: 8000
+    env:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # PORT is also injected automatically by Koyeb; listed here for clarity.
+      - key: PORT
+        value: "8000"
+      - key: SepoliaConfig__RpcUrl
+        value: https://eth-sepolia.g.alchemy.com/v2/Ks11QIw9SumUIYRW9Aigm
+      - key: SepoliaConfig__GovernorAddress
+        value: "0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D"
+      - key: SepoliaConfig__RoleManagerAddress
+        value: "0xB0d34552D18F9e3eDfAd13cFC7Bbca85c6f9db6e"
+      - key: SepoliaConfig__AssetTokenAddress
+        value: "0x2527f64a08BC3dC1d373fDf63e1a80a72B8a105D"
+      - key: SepoliaConfig__LoanManagerAddress
+        value: "0xC795066E3ad49788640e1539B365036E40C4a3e6"
+      - key: AllowedOrigins__0
+        value: "https://pme-financing.vercel.app"
+      # Secrets — set via the Koyeb dashboard, not stored here:
+      #   DATABASE_URL              PostgreSQL connection string from Koyeb addon
+      #   BLOCKFIN_GOVERNOR_PRIVATE_KEY  Governor wallet private key (with 0x prefix)
+      #   Jwt__Secret               SMEFinancingPlatformSuperSecretKey2026!!
+      #   Jwt__Issuer               SMEFinancing
+      #   Jwt__Audience             SMEFinancing
+      #   GovernorWallet            0xa3BCcC4483444fcf1A9C2781343a8cFaCDE2594D
