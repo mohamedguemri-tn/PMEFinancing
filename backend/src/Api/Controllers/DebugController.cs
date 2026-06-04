@@ -128,12 +128,39 @@ public class DebugController : ControllerBase
         });
     }
 
-    [HttpPost("grant-pme-role/{walletAddress}")]
-    public async Task<IActionResult> GrantPmeRole(string walletAddress)
+    /// <summary>Grant PME role on AssetToken + LoanManager (use after approving a PME on Sepolia)</summary>
+    [HttpPost("grant-roles/pme/{walletAddress}")]
+    public async Task<IActionResult> GrantPmeRoles(string walletAddress)
     {
         if (!IsDev) return NotFound();
         await _blockchainService.GrantAssetTokenRoleAsync(walletAddress);
-        return Ok(new { message = $"PME role granted to {walletAddress}" });
+        await _blockchainService.GrantLoanManagerRoleAsync(walletAddress, "PME");
+        return Ok(new { message = $"PME roles granted on AssetToken + LoanManager for {walletAddress}" });
+    }
+
+    /// <summary>Grant INVESTOR role on LoanManager</summary>
+    [HttpPost("grant-roles/investor/{walletAddress}")]
+    public async Task<IActionResult> GrantInvestorRoles(string walletAddress)
+    {
+        if (!IsDev) return NotFound();
+        await _blockchainService.GrantLoanManagerRoleAsync(walletAddress, "INVESTOR");
+        return Ok(new { message = $"INVESTOR role granted on LoanManager for {walletAddress}" });
+    }
+
+    /// <summary>Grant all roles for all seeded demo wallets at once</summary>
+    [HttpPost("grant-roles/all-demo-wallets")]
+    public async Task<IActionResult> GrantAllDemoRoles()
+    {
+        if (!IsDev) return NotFound();
+
+        var pme = "0xd44f328a3887eca9ef921fa490792d95f99c8906";
+        var investor = "0xce8affdbdbdc02151784037dba132b6447abe37a";
+
+        await _blockchainService.GrantAssetTokenRoleAsync(pme);
+        await _blockchainService.GrantLoanManagerRoleAsync(pme, "PME");
+        await _blockchainService.GrantLoanManagerRoleAsync(investor, "INVESTOR");
+
+        return Ok(new { message = "All demo wallet roles granted", pme, investor });
     }
 
     [HttpDelete("reset")]

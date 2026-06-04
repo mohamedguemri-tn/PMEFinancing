@@ -11,4 +11,5 @@ public interface IBlockchainService
     Task<string> GetAssetStatusAsync(uint tokenId);
     Task<string> RegisterUserAsync(string walletAddress, string role);
     Task GrantAssetTokenRoleAsync(string pmeWalletAddress);
+    Task GrantLoanManagerRoleAsync(string walletAddress, string role);
 }

@@ -197,6 +197,35 @@ public class BlockchainService : IBlockchainService
         }
     }
 
+    /// <inheritdoc />
+    public async Task GrantLoanManagerRoleAsync(string walletAddress, string role)
+    {
+        try
+        {
+            var web3 = CreateWeb3ForGovernor();
+            var contract = web3.Eth.GetContract(_config.LoanManagerAbi, _config.LoanManagerAddress);
+            var function = contract.GetFunction("grantRole");
+
+            var roleHex = new Sha3Keccack().CalculateHash(role);
+            var roleBytes = Convert.FromHexString(roleHex);
+
+            var gas = await function.EstimateGasAsync(_config.GovernorAddress, null, null, roleBytes, walletAddress);
+            await function.SendTransactionAsync(_config.GovernorAddress, gas, null, roleBytes, walletAddress);
+        }
+        catch (BlockchainException)
+        {
+            throw;
+        }
+        catch (RpcResponseException ex)
+        {
+            throw new BlockchainException($"LoanManager.grantRole({role}) failed.", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new BlockchainException($"Unexpected error during GrantLoanManagerRoleAsync({role}).", ex);
+        }
+    }
+
     private Web3 CreateWeb3ForGovernor()
     {
         var privateKey = _config.GovernorPrivateKey;

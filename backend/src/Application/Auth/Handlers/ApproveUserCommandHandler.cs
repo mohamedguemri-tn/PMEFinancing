@@ -62,7 +62,29 @@ public class ApproveUserCommandHandler : IRequestHandler<ApproveUserCommand, Uni
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "AssetToken.grantRole(PME) failed for user {UserId} ({Wallet}) — mint will be rejected until fixed", user.Id, user.WalletAddress);
+                _logger.LogError(ex, "AssetToken.grantRole(PME) failed for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
+            }
+
+            try
+            {
+                await _blockchainService.GrantLoanManagerRoleAsync(user.WalletAddress, "PME");
+                _logger.LogInformation("LoanManager.grantRole(PME) succeeded for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "LoanManager.grantRole(PME) failed for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
+            }
+        }
+        else if (user.Role == Role.INVESTOR)
+        {
+            try
+            {
+                await _blockchainService.GrantLoanManagerRoleAsync(user.WalletAddress, "INVESTOR");
+                _logger.LogInformation("LoanManager.grantRole(INVESTOR) succeeded for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "LoanManager.grantRole(INVESTOR) failed for user {UserId} ({Wallet})", user.Id, user.WalletAddress);
             }
         }
 

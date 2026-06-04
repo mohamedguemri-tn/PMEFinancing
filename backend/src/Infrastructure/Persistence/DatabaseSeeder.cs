@@ -1,7 +1,10 @@
 namespace Infrastructure.Persistence;
 
 using Domain.Entities;
+using Infrastructure.Blockchain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -13,12 +16,14 @@ public class DatabaseSeeder
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DatabaseSeeder> _logger;
+    private readonly IBlockchainService _blockchainService;
 
-    public DatabaseSeeder(AppDbContext context, IConfiguration configuration, ILogger<DatabaseSeeder> logger)
+    public DatabaseSeeder(AppDbContext context, IConfiguration configuration, ILogger<DatabaseSeeder> logger, IBlockchainService blockchainService)
     {
         _context = context;
         _configuration = configuration;
         _logger = logger;
+        _blockchainService = blockchainService;
     }
 
     /// <summary>
@@ -33,13 +38,41 @@ public class DatabaseSeeder
         // type annotations (uniqueidentifier, nvarchar, datetime2) that are incompatible.
         var isPostgres = _context.Database.ProviderName?.Contains("Npgsql") == true;
         if (isPostgres)
-            await _context.Database.EnsureCreatedAsync();
+            await EnsurePostgresSchemaAsync();
         else
             await _context.Database.MigrateAsync();
         _logger.LogInformation("Database initialisation completed.");
 
         await SeedGovernorAsync();
         await SeedDemoUsersAsync();
+    }
+
+    private async Task EnsurePostgresSchemaAsync()
+    {
+        // EnsureCreated()'s HasTables() check is unreliable on hosted PostgreSQL (e.g. Supabase):
+        // pre-existing tables in auth/storage/realtime schemas make it return true, causing EF Core
+        // to skip creating our public schema tables entirely.
+        // Instead, check specifically for our tables in the public schema.
+        var conn = _context.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "SELECT COUNT(*) FROM information_schema.tables " +
+            "WHERE table_schema = 'public' AND table_name = 'Users'";
+        var usersExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+
+        if (!usersExists)
+        {
+            var creator = _context.Database.GetService<IRelationalDatabaseCreator>();
+            await creator.CreateTablesAsync();
+            _logger.LogInformation("PostgreSQL schema created from EF model.");
+        }
+        else
+        {
+            _logger.LogInformation("PostgreSQL schema already exists, skipping creation.");
+        }
     }
 
     private async Task SeedGovernorAsync()
@@ -50,7 +83,7 @@ public class DatabaseSeeder
             return;
         }
 
-        var wallet = _configuration["GovernorWallet"] ?? "0x0000000000000000000000000000000000000000";
+        var wallet = (_configuration["GovernorWallet"] ?? "0x0000000000000000000000000000000000000000").ToLower();
         _context.Users.Add(new User
         {
             WalletAddress = wallet,
@@ -64,14 +97,14 @@ public class DatabaseSeeder
 
     private async Task SeedDemoUsersAsync()
     {
-        var pmeWallet      = _configuration["DemoWallets:Pme"]      ?? string.Empty;
-        var investorWallet = _configuration["DemoWallets:Investor"]  ?? string.Empty;
-        var guarantorWallet= _configuration["DemoWallets:Guarantor"] ?? string.Empty;
+        var pmeWallet      = (_configuration["DemoWallets:Pme"]      ?? string.Empty).ToLower();
+        var investorWallet = (_configuration["DemoWallets:Investor"]  ?? string.Empty).ToLower();
+        var guarantorWallet= (_configuration["DemoWallets:Guarantor"] ?? string.Empty).ToLower();
 
         if (string.IsNullOrEmpty(pmeWallet)) return;
 
         // PME
-        if (!await _context.Users.AnyAsync(u => u.WalletAddress == pmeWallet))
+        if (!await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == pmeWallet))
         {
             var pme = new User
             {
@@ -92,7 +125,7 @@ public class DatabaseSeeder
 
         // Investor
         if (!string.IsNullOrEmpty(investorWallet) &&
-            !await _context.Users.AnyAsync(u => u.WalletAddress == investorWallet))
+            !await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == investorWallet))
         {
             var investor = new User
             {
@@ -113,7 +146,7 @@ public class DatabaseSeeder
 
         // Guarantor
         if (!string.IsNullOrEmpty(guarantorWallet) &&
-            !await _context.Users.AnyAsync(u => u.WalletAddress == guarantorWallet))
+            !await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == guarantorWallet))
         {
             var guarantor = new User
             {
@@ -133,5 +166,27 @@ public class DatabaseSeeder
         }
 
         await _context.SaveChangesAsync();
+
+        // Grant on-chain roles for seeded demo wallets.
+        // Wrapped in try-catch — blockchain may be unavailable in local dev without a node.
+        try
+        {
+            _logger.LogInformation("Granting on-chain roles for seeded demo wallets...");
+
+            if (!string.IsNullOrEmpty(pmeWallet))
+            {
+                await _blockchainService.GrantAssetTokenRoleAsync(pmeWallet);
+                await _blockchainService.GrantLoanManagerRoleAsync(pmeWallet, "PME");
+            }
+
+            if (!string.IsNullOrEmpty(investorWallet))
+                await _blockchainService.GrantLoanManagerRoleAsync(investorWallet, "INVESTOR");
+
+            _logger.LogInformation("On-chain roles granted for demo wallets.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not grant on-chain roles during seeding — blockchain may not be available. Grant manually if needed.");
+        }
     }
 }

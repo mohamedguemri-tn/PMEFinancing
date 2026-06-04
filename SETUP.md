@@ -139,6 +139,19 @@ To use the production deployment:
 2. Get free SepoliaETH from https://cloud.google.com/application/web3/faucet/ethereum/sepolia
 3. Use the app normally — all transactions go to Sepolia
 
+### After first deployment — grant demo wallet roles
+
+Run once after the backend starts with the Sepolia config:
+
+```bash
+curl -X POST https://your-backend-url/api/debug/grant-roles/all-demo-wallets
+```
+
+This grants PME role on AssetToken + LoanManager for the demo PME wallet,
+and INVESTOR role on LoanManager for the demo Investor wallet.
+
+For new users registered through the UI, roles are granted automatically on approval.
+
 ---
 
 ## GitHub Actions CI
