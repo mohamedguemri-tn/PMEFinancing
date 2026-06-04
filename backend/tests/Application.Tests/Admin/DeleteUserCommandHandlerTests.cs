@@ -12,10 +12,10 @@ public class DeleteUserCommandHandlerTests
     private static DeleteUserCommandHandler CreateHandler(Infrastructure.Persistence.AppDbContext ctx)
         => new(ctx);
 
-    // ── Test 1 — Soft-deletes user successfully ───────────────────────────────
+    // ── Test 1 — Hard-deletes user successfully ──────────────────────────────
 
     [Fact]
-    public async Task Handle_ValidUser_SetsIsDeletedTrue()
+    public async Task Handle_ValidUser_RemovesUserFromDatabase()
     {
         using var ctx = TestDbContextFactory.Create();
         var user = new User { WalletAddress = "0xpme1", Role = Role.PME, IsApproved = true };
@@ -24,8 +24,8 @@ public class DeleteUserCommandHandlerTests
 
         await CreateHandler(ctx).Handle(new DeleteUserCommand { UserId = user.Id }, CancellationToken.None);
 
-        var saved = await ctx.Users.FindAsync(user.Id);
-        saved!.IsDeleted.Should().BeTrue();
+        var deleted = await ctx.Users.FindAsync(user.Id);
+        deleted.Should().BeNull();
     }
 
     // ── Test 2 — Governor cannot be deleted ──────────────────────────────────

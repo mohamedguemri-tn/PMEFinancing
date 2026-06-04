@@ -26,7 +26,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
         if (user.Role == Role.GOVERNOR)
             throw new ForbiddenActionException("Cannot delete Governor account");
 
-        user.IsDeleted = true;
+        _context.Users.Remove(user);
         await _context.SaveChangesAsync(ct);
 
         return Unit.Value;
