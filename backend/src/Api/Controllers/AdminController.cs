@@ -1,13 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Application.Admin.Commands;
 using Application.Admin.Queries;
 using Application.Auth.Commands;
 using Application.Loans.Queries;
-using Domain.Entities;
-using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -18,12 +16,10 @@ namespace Api.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly AppDbContext _context;
 
-    public AdminController(IMediator mediator, AppDbContext context)
+    public AdminController(IMediator mediator)
     {
         _mediator = mediator;
-        _context = context;
     }
 
     /// <summary>Get paginated list of users pending Governor approval.</summary>
@@ -36,15 +32,41 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Get all approved users with optional role filter.</summary>
+    /// <summary>Get paginated list of all users with optional role and search filters.</summary>
     [HttpGet("users")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers(
+        [FromQuery] string? role,
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        var users = await _context.Users
-            .Where(u => u.IsApproved && u.Role != Role.GOVERNOR)
-            .Select(u => new { u.Id, u.WalletAddress, Role = u.Role.ToString(), u.CreatedAt })
-            .ToListAsync();
-        return Ok(users);
+        var result = await _mediator.Send(new GetAllUsersQuery
+        {
+            Role = role,
+            Search = search,
+            Page = page,
+            PageSize = pageSize
+        });
+        return Ok(result);
+    }
+
+    /// <summary>Soft-delete a user account. Cannot delete the Governor account.</summary>
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        try
+        {
+            await _mediator.Send(new DeleteUserCommand { UserId = id });
+            return NoContent();
+        }
+        catch (Application.Common.Exceptions.ForbiddenActionException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
+        catch (Application.Common.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status404NotFound, Detail = ex.Message });
+        }
     }
 
     /// <summary>Get paginated list of overdue funded loans (DueDate has passed).</summary>
