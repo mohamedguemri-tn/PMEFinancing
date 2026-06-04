@@ -19,6 +19,7 @@
 .env
 .env.local
 .env.*.local
+.env.sepolia
 *.log
 logs/
 *.pid
@@ -411,3 +412,5 @@ junit.xml
 # Performance profiling
 perf/
 speed-measure-webpack-plugin/
+.vercel
+.env*
