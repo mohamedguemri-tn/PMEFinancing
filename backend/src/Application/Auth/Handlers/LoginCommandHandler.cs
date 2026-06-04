@@ -26,7 +26,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, string>
 
     public async Task<string> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var walletAddress = request.WalletAddress?.Trim();
+        var walletAddress = request.WalletAddress?.Trim().ToLower();
         var signature = request.Signature?.Trim();
 
         if (string.IsNullOrWhiteSpace(walletAddress))
@@ -37,7 +37,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, string>
 
         var utcNow = DateTime.UtcNow;
         var nonceRecord = await _context.Nonces
-            .FirstOrDefaultAsync(n => n.WalletAddress == walletAddress, cancellationToken);
+            .FirstOrDefaultAsync(n => n.WalletAddress.ToLower() == walletAddress, cancellationToken);
 
         if (nonceRecord == null || nonceRecord.ExpiresAt <= utcNow)
             throw new ValidationException("Invalid signature");
@@ -50,7 +50,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, string>
         var user = await _context.Users
             .Include(u => u.PmeProfile)
             .Include(u => u.InvestorProfile)
-            .FirstOrDefaultAsync(u => u.WalletAddress == walletAddress, cancellationToken);
+            .FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == walletAddress && !u.IsDeleted, cancellationToken);
 
         if (user == null)
             throw new KeyNotFoundException("User not found");

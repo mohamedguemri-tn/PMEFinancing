@@ -19,7 +19,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, G
 
     public async Task<Guid> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-        var walletAddress = request.WalletAddress?.Trim();
+        var walletAddress = request.WalletAddress?.Trim().ToLower();
         var signature = request.Signature?.Trim();
         var roleText = request.Role?.Trim();
 
@@ -36,14 +36,14 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, G
             throw new ValidationException("Role not allowed for self-registration");
 
         var userExists = await _context.Users
-            .AnyAsync(u => u.WalletAddress == walletAddress, cancellationToken);
+            .AnyAsync(u => u.WalletAddress.ToLower() == walletAddress && !u.IsDeleted, cancellationToken);
 
         if (userExists)
             throw new ValidationException("Wallet already registered");
 
         var utcNow = DateTime.UtcNow;
         var nonceRecord = await _context.Nonces
-            .FirstOrDefaultAsync(n => n.WalletAddress == walletAddress, cancellationToken);
+            .FirstOrDefaultAsync(n => n.WalletAddress.ToLower() == walletAddress, cancellationToken);
 
         if (nonceRecord == null || nonceRecord.ExpiresAt <= utcNow)
             throw new ValidationException("Invalid signature");

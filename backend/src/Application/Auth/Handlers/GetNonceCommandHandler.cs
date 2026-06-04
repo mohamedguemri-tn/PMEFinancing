@@ -21,14 +21,14 @@ public class GetNonceCommandHandler : IRequestHandler<GetNonceCommand, string>
 
         // Create or update user if not exists
         var user = await _context.Users.FirstOrDefaultAsync(
-            u => u.WalletAddress == request.WalletAddress, cancellationToken);
+            u => u.WalletAddress.ToLower() == request.WalletAddress.ToLower() && !u.IsDeleted, cancellationToken);
 
         if (user == null)
         {
             user = new User
             {
                 Id = Guid.NewGuid(),
-                WalletAddress = request.WalletAddress,
+                WalletAddress = request.WalletAddress.ToLower(),
                 Role = Role.PME,
                 IsApproved = false,
                 CreatedAt = DateTime.UtcNow
@@ -39,7 +39,7 @@ public class GetNonceCommandHandler : IRequestHandler<GetNonceCommand, string>
 
         // Store nonce with 10-minute expiration
         var existingNonce = await _context.Nonces.FirstOrDefaultAsync(
-            n => n.WalletAddress == request.WalletAddress, cancellationToken);
+            n => n.WalletAddress.ToLower() == request.WalletAddress.ToLower(), cancellationToken);
 
         if (existingNonce != null)
         {
@@ -50,7 +50,7 @@ public class GetNonceCommandHandler : IRequestHandler<GetNonceCommand, string>
         {
             _context.Nonces.Add(new Nonce
             {
-                WalletAddress = request.WalletAddress,
+                WalletAddress = request.WalletAddress.ToLower(),
                 Value = nonce,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(10)
             });
