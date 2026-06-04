@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Domain.Entities;
+using Infrastructure.Blockchain;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -24,17 +25,20 @@ public class DebugController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly TestDataSeeder _testDataSeeder;
     private readonly IHostEnvironment _env;
+    private readonly IBlockchainService _blockchainService;
 
     public DebugController(
-        AppDbContext context, 
-        IConfiguration configuration, 
+        AppDbContext context,
+        IConfiguration configuration,
         TestDataSeeder testDataSeeder,
-        IHostEnvironment env)
+        IHostEnvironment env,
+        IBlockchainService blockchainService)
     {
         _context = context;
         _configuration = configuration;
         _testDataSeeder = testDataSeeder;
         _env = env;
+        _blockchainService = blockchainService;
     }
 
     private bool IsDev => _env.IsDevelopment();
@@ -122,6 +126,14 @@ public class DebugController : ControllerBase
             blocklistedTokens = blocklistedCount,
             pendingNonces = pendingNoncesCount
         });
+    }
+
+    [HttpPost("grant-pme-role/{walletAddress}")]
+    public async Task<IActionResult> GrantPmeRole(string walletAddress)
+    {
+        if (!IsDev) return NotFound();
+        await _blockchainService.GrantAssetTokenRoleAsync(walletAddress);
+        return Ok(new { message = $"PME role granted to {walletAddress}" });
     }
 
     [HttpDelete("reset")]
