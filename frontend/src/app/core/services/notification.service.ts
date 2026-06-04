@@ -22,17 +22,22 @@ export class NotificationService {
   }
 
   startConnection(token: string): void {
-    if (this.hubConnection?.state === signalR.HubConnectionState.Connected ||
-        this.hubConnection?.state === signalR.HubConnectionState.Connecting) {
-      return;
+    if (this.hubConnection) {
+      this.stopConnection();
     }
 
-    const hubUrl = environment.apiUrl.replace('/api', '') + '/hubs/notifications';
-
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl, { accessTokenFactory: () => token })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Warning)
+      .withUrl(environment.hubUrl, {
+        accessTokenFactory: () => token,
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        },
+        transport: signalR.HttpTransportType.WebSockets |
+                   signalR.HttpTransportType.ServerSentEvents |
+                   signalR.HttpTransportType.LongPolling
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
       .build();
 
     this.hubConnection.on('ReceiveNotification', (notification: AppNotification) => {
@@ -40,9 +45,22 @@ export class NotificationService {
       this.notificationsSubject.next([{ ...notification, isRead: false }, ...current]);
     });
 
+    this.hubConnection.onreconnecting(() => {
+      console.log('SignalR reconnecting...');
+    });
+
+    this.hubConnection.onreconnected(() => {
+      console.log('SignalR reconnected');
+    });
+
+    this.hubConnection.onclose((err) => {
+      console.log('SignalR connection closed', err);
+    });
+
     this.hubConnection
       .start()
-      .catch(err => console.error('SignalR connection error:', err));
+      .then(() => console.log('SignalR connected to', environment.hubUrl))
+      .catch(err => console.error('SignalR connection failed:', err));
   }
 
   stopConnection(): void {
