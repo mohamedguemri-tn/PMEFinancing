@@ -29,6 +29,11 @@ const LOAN_MANAGER_ABI = [
   'event LoanRequested(uint256 indexed loanId, address indexed pme, uint256 collateralTokenId, uint256 amount, uint256 durationDays)',
 ];
 
+const ASSET_TOKEN_ABI = [
+  'function approve(address to, uint256 tokenId)',
+  'function getApproved(uint256 tokenId) view returns (address)',
+];
+
 interface Asset {
   id: string;
   name: string;
@@ -409,7 +414,7 @@ export class PmeFinancingComponent implements OnInit {
     }
 
     this.txState = 'waiting';
-    this.txMessage = 'Waiting for MetaMask confirmation…';
+    this.txMessage = 'Preparing…';
 
     try {
       const loanAmount: number = this.loanForm.value.loanAmount;
@@ -417,8 +422,31 @@ export class PmeFinancingComponent implements OnInit {
 
       const provider = new BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
-      const contract = new Contract(environment.loanManagerAddress, LOAN_MANAGER_ABI, signer);
 
+      // Step 1 — Approve LoanManager to transfer the NFT
+      const assetTokenContract = new Contract(
+        environment.contractAddress,
+        ASSET_TOKEN_ABI,
+        signer
+      );
+
+      const approved = await assetTokenContract['getApproved'](BigInt(tokenId));
+      if (approved.toLowerCase() !== environment.loanManagerAddress.toLowerCase()) {
+        this.txMessage = 'Step 1/2: Approving NFT transfer to LoanManager… (confirm in MetaMask)';
+        const approveTx = await assetTokenContract['approve'](
+          environment.loanManagerAddress,
+          BigInt(tokenId)
+        );
+        this.txState = 'pending';
+        this.txMessage = 'Step 1/2: Waiting for NFT approval confirmation…';
+        await approveTx.wait();
+      }
+
+      // Step 2 — Request the loan
+      this.txState = 'waiting';
+      this.txMessage = 'Step 2/2: Submitting loan request… (confirm in MetaMask)';
+
+      const contract = new Contract(environment.loanManagerAddress, LOAN_MANAGER_ABI, signer);
       const tx = await contract['requestLoan'](
         BigInt(tokenId),
         parseEther(loanAmount.toString()),
@@ -426,7 +454,7 @@ export class PmeFinancingComponent implements OnInit {
       );
 
       this.txState = 'pending';
-      this.txMessage = 'Transaction pending on Ethereum…';
+      this.txMessage = 'Step 2/2: Transaction pending on Ethereum…';
 
       const receipt = await tx.wait();
 
