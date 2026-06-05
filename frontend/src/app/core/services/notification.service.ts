@@ -32,11 +32,13 @@ export class NotificationService {
         headers: {
           'ngrok-skip-browser-warning': 'true'
         },
-        transport: signalR.HttpTransportType.WebSockets |
-                   signalR.HttpTransportType.ServerSentEvents |
-                   signalR.HttpTransportType.LongPolling
+        transport: environment.production
+            ? signalR.HttpTransportType.LongPolling
+            : signalR.HttpTransportType.WebSockets |
+              signalR.HttpTransportType.ServerSentEvents |
+              signalR.HttpTransportType.LongPolling
       })
-      .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+      .withAutomaticReconnect([0, 3000, 10000, 30000, 60000])
       .configureLogging(signalR.LogLevel.Information)
       .build();
 

@@ -36,7 +36,9 @@ done
 echo "Backend healthy"
 
 echo "Starting ngrok tunnel..."
-ngrok http --domain=flakily-vendor-trousers.ngrok-free.dev 5002 &
+ngrok http --domain=flakily-vendor-trousers.ngrok-free.dev \
+  --request-timeout=120s \
+  5002 &
 
 echo ""
 echo "════════════════════════════════════════"
