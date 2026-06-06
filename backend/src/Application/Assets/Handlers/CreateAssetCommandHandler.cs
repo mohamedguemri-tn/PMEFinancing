@@ -18,7 +18,7 @@ public class CreateAssetCommandHandler : IRequestHandler<CreateAssetCommand, Gui
     public async Task<Guid> Handle(CreateAssetCommand request, CancellationToken cancellationToken)
     {
         var user = await _context.Users.FirstOrDefaultAsync(
-            u => u.WalletAddress == request.PmeWallet &&
+            u => u.WalletAddress.ToLower() == request.PmeWallet.ToLower() &&
                  (u.Role == Role.PME || u.Role == Role.GUARANTOR) &&
                  u.IsApproved,
             cancellationToken);

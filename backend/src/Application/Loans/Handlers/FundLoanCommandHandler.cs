@@ -36,7 +36,7 @@ public class FundLoanCommandHandler : IRequestHandler<FundLoanCommand, Unit>
         if (loan.Status != LoanStatus.REQUESTED)
             throw new ForbiddenActionException("Loan is not in REQUESTED state");
 
-        var investor = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == request.InvestorWallet, cancellationToken);
+        var investor = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == request.InvestorWallet.ToLower(), cancellationToken);
         if (investor == null) throw new NotFoundException("Investor", request.InvestorWallet);
 
         loan.InvestorId = investor.Id;

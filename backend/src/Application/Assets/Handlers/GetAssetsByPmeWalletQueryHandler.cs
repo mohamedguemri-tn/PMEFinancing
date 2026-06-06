@@ -18,7 +18,7 @@ public class GetAssetsByPmeWalletQueryHandler : IRequestHandler<GetAssetsByPmeWa
     public async Task<PaginatedResult<AssetDto>> Handle(GetAssetsByPmeWalletQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Assets
-            .Where(a => a.Owner.WalletAddress == request.PmeWallet && !a.IsDeleted)
+            .Where(a => a.Owner.WalletAddress.ToLower() == request.PmeWallet.ToLower() && !a.IsDeleted)
             .OrderByDescending(a => a.CreatedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);

@@ -47,7 +47,7 @@ public class LoansController : ControllerBase
     {
         var loan = await _context.Loans
             .Include(l => l.CollateralAsset)
-            .Where(l => l.Pme.WalletAddress == pmeWallet && l.Status == LoanStatus.FUNDED)
+            .Where(l => l.Pme.WalletAddress.ToLower() == pmeWallet.ToLower() && l.Status == LoanStatus.FUNDED)
             .Select(l => new
             {
                 l.Id,
@@ -186,7 +186,7 @@ public class LoansController : ControllerBase
             return Unauthorized();
 
         var investorId = await _context.Users
-            .Where(u => u.WalletAddress == wallet)
+            .Where(u => u.WalletAddress.ToLower() == wallet.ToLower())
             .Select(u => (Guid?)u.Id)
             .FirstOrDefaultAsync();
 

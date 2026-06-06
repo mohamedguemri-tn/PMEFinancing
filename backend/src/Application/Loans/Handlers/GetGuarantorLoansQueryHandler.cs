@@ -18,7 +18,7 @@ public class GetGuarantorLoansQueryHandler : IRequestHandler<GetGuarantorLoansQu
     public async Task<PaginatedResult<LoanDto>> Handle(GetGuarantorLoansQuery request, CancellationToken cancellationToken)
     {
         var guarantor = await _context.Users
-            .FirstOrDefaultAsync(u => u.WalletAddress == request.GuarantorWallet, cancellationToken);
+            .FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == request.GuarantorWallet.ToLower(), cancellationToken);
 
         if (guarantor == null)
             return new PaginatedResult<LoanDto> { Items = [], TotalCount = 0, Page = request.Page, PageSize = request.PageSize };

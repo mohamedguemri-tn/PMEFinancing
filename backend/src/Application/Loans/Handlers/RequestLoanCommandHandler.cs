@@ -27,7 +27,7 @@ public class RequestLoanCommandHandler : IRequestHandler<RequestLoanCommand, Gui
 
     public async Task<Guid> Handle(RequestLoanCommand request, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == request.PmeWallet, cancellationToken);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == request.PmeWallet.ToLower(), cancellationToken);
         if (user == null) throw new Exception("User not found");
 
         var asset = await _context.Assets.FindAsync(request.CollateralAssetId, cancellationToken);

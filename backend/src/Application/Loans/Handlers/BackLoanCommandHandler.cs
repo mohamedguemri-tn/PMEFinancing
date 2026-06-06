@@ -35,7 +35,7 @@ public class BackLoanCommandHandler : IRequestHandler<BackLoanCommand, Unit>
             throw new ForbiddenActionException("Loan already has a guarantor");
 
         var guarantor = await _context.Users
-            .FirstOrDefaultAsync(u => u.WalletAddress == request.GuarantorWallet, cancellationToken);
+            .FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == request.GuarantorWallet.ToLower(), cancellationToken);
 
         if (guarantor == null)
             throw new NotFoundException("User", request.GuarantorWallet);

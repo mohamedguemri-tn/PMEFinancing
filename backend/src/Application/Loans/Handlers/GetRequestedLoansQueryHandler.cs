@@ -28,7 +28,7 @@ public class GetRequestedLoansQueryHandler : IRequestHandler<GetRequestedLoansQu
         // PME view: filter by wallet, all statuses.
         // Marketplace view: no wallet filter, only REQUESTED status.
         if (!string.IsNullOrWhiteSpace(request.PmeWallet))
-            baseQuery = baseQuery.Where(l => l.Pme.WalletAddress == request.PmeWallet);
+            baseQuery = baseQuery.Where(l => l.Pme.WalletAddress.ToLower() == request.PmeWallet.ToLower());
         else
             baseQuery = baseQuery.Where(l => l.Status == LoanStatus.REQUESTED);
 

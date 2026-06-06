@@ -18,14 +18,14 @@ public class GetOrCreateNonceQueryHandler : IRequestHandler<GetOrCreateNonceQuer
 
     public async Task<string> Handle(GetOrCreateNonceQuery request, CancellationToken cancellationToken)
     {
-        var walletAddress = request.WalletAddress?.Trim();
+        var walletAddress = request.WalletAddress?.Trim().ToLower();
         if (string.IsNullOrWhiteSpace(walletAddress))
             throw new ValidationException("Wallet address is required");
 
         var utcNow = DateTime.UtcNow;
 
         var expiredNonces = await _context.Nonces
-            .Where(n => n.WalletAddress == walletAddress && n.ExpiresAt <= utcNow)
+            .Where(n => n.WalletAddress.ToLower() == walletAddress && n.ExpiresAt <= utcNow)
             .ToListAsync(cancellationToken);
 
         if (expiredNonces.Any())
@@ -35,7 +35,7 @@ public class GetOrCreateNonceQueryHandler : IRequestHandler<GetOrCreateNonceQuer
         }
 
         var existingNonce = await _context.Nonces
-            .FirstOrDefaultAsync(n => n.WalletAddress == walletAddress && n.ExpiresAt > utcNow, cancellationToken);
+            .FirstOrDefaultAsync(n => n.WalletAddress.ToLower() == walletAddress && n.ExpiresAt > utcNow, cancellationToken);
 
         if (existingNonce != null)
             return existingNonce.Value;

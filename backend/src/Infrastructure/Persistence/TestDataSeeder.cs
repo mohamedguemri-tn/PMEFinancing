@@ -20,10 +20,10 @@ public class TestDataSeeder
 
     public async Task SeedAsync()
     {
-        var governorWallet = _configuration["TestWallets:Governor"];
-        var pmeWallet = _configuration["TestWallets:Pme"];
-        var investorWallet = _configuration["TestWallets:Investor"];
-        var guarantorWallet = _configuration["TestWallets:Guarantor"];
+        var governorWallet = _configuration["TestWallets:Governor"]?.ToLower();
+        var pmeWallet = _configuration["TestWallets:Pme"]?.ToLower();
+        var investorWallet = _configuration["TestWallets:Investor"]?.ToLower();
+        var guarantorWallet = _configuration["TestWallets:Guarantor"]?.ToLower();
 
         if (string.IsNullOrEmpty(governorWallet) || string.IsNullOrEmpty(pmeWallet) || 
             string.IsNullOrEmpty(investorWallet) || string.IsNullOrEmpty(guarantorWallet))
@@ -32,10 +32,10 @@ public class TestDataSeeder
             return;
         }
 
-        var allExist = await _context.Users.AnyAsync(u => u.WalletAddress == governorWallet) &&
-                       await _context.Users.AnyAsync(u => u.WalletAddress == pmeWallet) &&
-                       await _context.Users.AnyAsync(u => u.WalletAddress == investorWallet) &&
-                       await _context.Users.AnyAsync(u => u.WalletAddress == guarantorWallet);
+        var allExist = await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == governorWallet) &&
+                       await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == pmeWallet) &&
+                       await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == investorWallet) &&
+                       await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == guarantorWallet);
 
         if (allExist)
         {
@@ -44,7 +44,7 @@ public class TestDataSeeder
         }
 
         // 1. GOVERNOR account
-        if (!await _context.Users.AnyAsync(u => u.WalletAddress == governorWallet))
+        if (!await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == governorWallet))
         {
             _context.Users.Add(new User
             {
@@ -56,7 +56,7 @@ public class TestDataSeeder
         }
 
         // 2. PME account
-        User? pmeUser = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress == pmeWallet);
+        User? pmeUser = await _context.Users.FirstOrDefaultAsync(u => u.WalletAddress.ToLower() == pmeWallet);
         if (pmeUser == null)
         {
             pmeUser = new User
@@ -98,7 +98,7 @@ public class TestDataSeeder
         }
 
         // 3. INVESTOR account
-        if (!await _context.Users.AnyAsync(u => u.WalletAddress == investorWallet))
+        if (!await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == investorWallet))
         {
             _context.Users.Add(new User
             {
@@ -116,7 +116,7 @@ public class TestDataSeeder
         }
 
         // 4. GUARANTOR account
-        if (!await _context.Users.AnyAsync(u => u.WalletAddress == guarantorWallet))
+        if (!await _context.Users.AnyAsync(u => u.WalletAddress.ToLower() == guarantorWallet))
         {
             var guarantorUser = new User
             {
