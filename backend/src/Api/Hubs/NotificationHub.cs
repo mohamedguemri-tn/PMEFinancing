@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace Api.Hubs;
 
@@ -14,7 +15,9 @@ public class NotificationHub : Hub
             await Groups.AddToGroupAsync(Context.ConnectionId, wallet.ToLower());
         }
 
-        var role = Context.User?.FindFirst("role")?.Value;
+        // ClaimTypes.Role serialises as a long URI; also accept the short "role" name.
+        var role = Context.User?.FindFirst("role")?.Value
+                ?? Context.User?.FindFirst(ClaimTypes.Role)?.Value;
         if (!string.IsNullOrEmpty(role))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"role_{role.ToLower()}");
@@ -31,7 +34,8 @@ public class NotificationHub : Hub
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, wallet.ToLower());
         }
 
-        var role = Context.User?.FindFirst("role")?.Value;
+        var role = Context.User?.FindFirst("role")?.Value
+                ?? Context.User?.FindFirst(ClaimTypes.Role)?.Value;
         if (!string.IsNullOrEmpty(role))
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"role_{role.ToLower()}");

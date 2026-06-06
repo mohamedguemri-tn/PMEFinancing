@@ -24,13 +24,13 @@ public class VerifySignatureCommandHandler : IRequestHandler<VerifySignatureComm
     {
         // Verify user exists
         var user = await _context.Users.FirstOrDefaultAsync(
-            u => u.WalletAddress == request.WalletAddress, cancellationToken);
+            u => u.WalletAddress.ToLower() == request.WalletAddress.ToLower(), cancellationToken);
         if (user == null)
             throw new Exception("User not found");
 
         // Retrieve and validate nonce from Nonce table
         var nonceRecord = await _context.Nonces.FirstOrDefaultAsync(
-            n => n.WalletAddress == request.WalletAddress, cancellationToken);
+            n => n.WalletAddress.ToLower() == request.WalletAddress.ToLower(), cancellationToken);
         
         if (nonceRecord == null)
             throw new Exception("Nonce not found");
@@ -54,7 +54,8 @@ public class VerifySignatureCommandHandler : IRequestHandler<VerifySignatureComm
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim("wallet", user.WalletAddress),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
+            new Claim("role", user.Role.ToString()),          // short name for SignalR hub lookup
+            new Claim(ClaimTypes.Role, user.Role.ToString())  // long URI for ASP.NET auth policies
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SMEFinancingPlatformSuperSecretKey2026!!"));
