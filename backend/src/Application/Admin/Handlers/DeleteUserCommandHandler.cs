@@ -18,17 +18,22 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken ct)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct);
-
-        if (user == null)
-            throw new NotFoundException("User", request.UserId);
+        var user = await _context.Users
+            .Include(u => u.Assets)
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, ct)
+            ?? throw new NotFoundException("User", request.UserId);
 
         if (user.Role == Role.GOVERNOR)
             throw new ForbiddenActionException("Cannot delete Governor account");
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync(ct);
+        // Soft-delete assets; loans are kept intact for the audit trail.
+        foreach (var asset in user.Assets.Where(a => !a.IsDeleted))
+            asset.IsDeleted = true;
 
+        user.IsDeleted = true;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
         return Unit.Value;
     }
 }
