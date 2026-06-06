@@ -264,7 +264,20 @@ export class InvestorComponent implements OnInit {
         this.totalInvested = totalInvested;
         this.activeLoans = activities.filter((a) => a.status === 'FUNDED').length;
         this.averageReturnRate = 0;
-        this.doughnutChartData.datasets[0].data = [counts['FUNDED'], counts['REPAID'], counts['DEFAULTED']];
+        // Replacing the whole object reference triggers ng2-charts ngOnChanges;
+        // mutating datasets[0].data in place does not.
+        this.doughnutChartData = {
+          labels: ['FUNDED', 'REPAID', 'DEFAULTED'],
+          datasets: [{
+            data: [counts['FUNDED'], counts['REPAID'], counts['DEFAULTED']],
+            backgroundColor: [
+              this.themeService.getColor('--color-primary'),
+              this.themeService.getColor('--color-success'),
+              this.themeService.getColor('--color-danger'),
+            ],
+            borderWidth: 0,
+          }],
+        };
       },
       error: () => { this.recentActivity = []; },
     });
