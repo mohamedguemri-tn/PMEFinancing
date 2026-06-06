@@ -30,6 +30,7 @@ const LOAN_MANAGER_ABI = [
 ];
 
 const ASSET_TOKEN_ABI = [
+  'function ownerOf(uint256 tokenId) view returns (address)',
   'function approve(address to, uint256 tokenId)',
   'function getApproved(uint256 tokenId) view returns (address)',
 ];
@@ -423,13 +424,20 @@ export class PmeFinancingComponent implements OnInit {
       const provider = new BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
 
-      // Step 1 — Approve LoanManager to transfer the NFT
       const assetTokenContract = new Contract(
         environment.contractAddress,
         ASSET_TOKEN_ABI,
         signer
       );
 
+      // Check 1 — Verify PME still owns the NFT (it may have been re-locked in a prior loan)
+      const walletAddress = this.authService.currentUser?.walletAddress ?? '';
+      const owner = await assetTokenContract['ownerOf'](BigInt(tokenId));
+      if (owner.toLowerCase() !== walletAddress.toLowerCase()) {
+        throw new Error('This asset is no longer in your wallet. It may still be locked as collateral in an active loan.');
+      }
+
+      // Step 1 — Approve LoanManager to transfer the NFT (skip if already approved)
       const approved = await assetTokenContract['getApproved'](BigInt(tokenId));
       if (approved.toLowerCase() !== environment.loanManagerAddress.toLowerCase()) {
         this.txMessage = 'Step 1/2: Approving NFT transfer to LoanManager… (confirm in MetaMask)';
