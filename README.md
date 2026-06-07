@@ -1,6 +1,9 @@
 # BlockFin PME
 
 [![CI](https://github.com/mohamedguemri-tn/PMEFinancing/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamedguemri-tn/PMEFinancing/actions/workflows/ci.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=mohamedguemri-tn_PMEFinancing&metric=alert_status)](https://sonarcloud.io/project/overview?id=mohamedguemri-tn_PMEFinancing)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=mohamedguemri-tn_PMEFinancing&metric=bugs)](https://sonarcloud.io/project/overview?id=mohamedguemri-tn_PMEFinancing)
+[![Coverage](https://codecov.io/gh/mohamedguemri-tn/PMEFinancing/branch/main/graph/badge.svg?token=1ef7fcea-3a8e-4426-aca2-0547d7d3bb0f)](https://codecov.io/gh/mohamedguemri-tn/PMEFinancing)
 
 A blockchain-based participatory financing platform for SMEs.
 Built with Angular 17, ASP.NET Core 8, Solidity, and Ganache.

@@ -8,28 +8,66 @@ on:
 
 jobs:
   backend:
-    name: Backend — Build & Test
+    name: Backend — Build, Test & Analyze
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+      - name: Setup Java 17 (required for SonarCloud scanner)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install SonarCloud scanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
       - name: Restore dependencies
         run: dotnet restore backend/backend.sln
+
+      - name: Begin SonarCloud analysis
+        run: |
+          dotnet sonarscanner begin \
+            /k:"mohamedguemri-tn_PMEFinancing" \
+            /o:"mohamedguemri-tn" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.exclusions="**/Migrations/**,**/obj/**,**/bin/**"
 
       - name: Build
         run: dotnet build backend/backend.sln --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test backend/backend.sln --no-build --configuration Release --verbosity normal
+      - name: Run tests with coverage
+        run: |
+          dotnet test backend/backend.sln \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
         env:
           ASPNETCORE_ENVIRONMENT: Test
+
+      - name: End SonarCloud analysis
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: '**/coverage.opencover.xml'
+          flags: backend
+          fail_ci_if_error: false
 
   frontend:
     name: Frontend — Build
