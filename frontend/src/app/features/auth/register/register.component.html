@@ -104,6 +104,9 @@
               class="role-card"
               [class.selected]="selectedRole === 'PME'"
               (click)="selectRole('PME')"
+              (keydown.enter)="selectRole('PME')"
+              tabindex="0"
+              role="button"
             >
               <div class="role-card-icon pme">
                 <mat-icon>store</mat-icon>
@@ -119,6 +122,9 @@
               class="role-card"
               [class.selected]="selectedRole === 'Investor'"
               (click)="selectRole('Investor')"
+              (keydown.enter)="selectRole('Investor')"
+              tabindex="0"
+              role="button"
             >
               <div class="role-card-icon investor">
                 <mat-icon>show_chart</mat-icon>
@@ -134,6 +140,9 @@
               class="role-card"
               [class.selected]="selectedRole === 'Guarantor'"
               (click)="selectRole('Guarantor')"
+              (keydown.enter)="selectRole('Guarantor')"
+              tabindex="0"
+              role="button"
             >
               <div class="role-card-icon guarantor">
                 <mat-icon>verified_user</mat-icon>
