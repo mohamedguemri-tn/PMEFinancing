@@ -65,7 +65,9 @@ public class DebugController : ControllerBase
         var jwtIssuer = _configuration["Jwt:Issuer"];
         var jwtAudience = _configuration["Jwt:Audience"];
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret!));
+        if (string.IsNullOrWhiteSpace(jwtSecret))
+            throw new InvalidOperationException("JWT secret not configured");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var utcNow = DateTime.UtcNow;
         var expiresAt = utcNow.AddHours(24);

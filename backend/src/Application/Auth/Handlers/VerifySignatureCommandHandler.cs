@@ -3,6 +3,7 @@ using Domain.Entities;
 using Infrastructure.Persistence;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Nethereum.Signer;
 using System.IdentityModel.Tokens.Jwt;
@@ -14,10 +15,12 @@ namespace Application.Auth.Handlers;
 public class VerifySignatureCommandHandler : IRequestHandler<VerifySignatureCommand, string>
 {
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public VerifySignatureCommandHandler(AppDbContext context)
+    public VerifySignatureCommandHandler(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
     public async Task<string> Handle(VerifySignatureCommand request, CancellationToken cancellationToken)
@@ -58,11 +61,14 @@ public class VerifySignatureCommandHandler : IRequestHandler<VerifySignatureComm
             new Claim(ClaimTypes.Role, user.Role.ToString())  // long URI for ASP.NET auth policies
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SMEFinancingPlatformSuperSecretKey2026!!"));
+        var jwtSecret = _configuration["Jwt__Secret"]
+                     ?? _configuration["Jwt:Secret"]
+                     ?? throw new InvalidOperationException("JWT secret not configured");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
-            issuer: "SMEFinancing",
-            audience: "SMEFinancing",
+            issuer: _configuration["Jwt:Issuer"] ?? _configuration["Jwt__Issuer"] ?? "SMEFinancing",
+            audience: _configuration["Jwt:Audience"] ?? _configuration["Jwt__Audience"] ?? "SMEFinancing",
             claims: claims,
             expires: DateTime.Now.AddHours(24),
             signingCredentials: creds);
